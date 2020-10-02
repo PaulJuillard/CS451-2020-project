@@ -57,15 +57,18 @@ public class Main {
 
         BarrierParser.Barrier.waitOnBarrier();
 
+        
+
         // send 
         try{
 
             DatagramSocket socket = new DatagramSocket(myPort);
             
-            String message = "Hi i'm host number" + pid;
+            byte[] s_buf = new byte[256];
+            byte[] r_buf = new byte[256];
             
+            String message = "Hi i'm host number" + pid;
             for(Host host : parser.hosts()){
-                byte[] s_buf = new byte[256];
                 
                 InetAddress address = InetAddress.getByName(host.getIp());
                 s_buf = message.getBytes();
@@ -73,7 +76,6 @@ public class Main {
                 socket.send(packet);
             }
             
-            byte[] r_buf = new byte[256];
             DatagramPacket r_p = new DatagramPacket(r_buf, r_buf.length);
             while(true) {
 

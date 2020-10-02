@@ -75,11 +75,13 @@ public class Main {
             
             byte[] r_buf = new byte[256];
             DatagramPacket r_p = new DatagramPacket(r_buf, r_buf.length);
-            
-            socket.receive(r_p);
-            String received = new String(r_buf, StandardCharsets.UTF_8);
-            
-            System.out.println(received);
+            while(true) {
+
+                socket.receive(r_p);
+                String received = new String(r_buf, StandardCharsets.UTF_8);
+                
+                System.out.println(received);
+            }
             
         } catch(Exception e){
             System.out.println("oh oh...");

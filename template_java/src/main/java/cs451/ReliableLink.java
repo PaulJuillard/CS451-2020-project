@@ -7,13 +7,15 @@ Date: 11.10.20
 package cs451;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Collections;
 import java.util.Optional;
 
 public class ReliableLink{
 
     private Host me;
     private ArrayList<Message> delivered;
-    private ArrayList<Message> toSend;
+    private List<Message> toSend;
 
     private FairlossLink channel;
 
@@ -21,15 +23,15 @@ public class ReliableLink{
         this.me = me;
         this.channel = new FairlossLink(me.getPort());
         this.delivered = new ArrayList<Message>();
-        this.toSend = new ArrayList<Message>();
-
+        this.toSend = Collections.synchronizedList(new ArrayList<Message>());
     }
 
     public void toSend(Message m){
-        toSend.add(m);
+        synchronized(this){toSend.add(m);}
     }
 
-    public void send(){
+    public synchronized void send(){
+        // must synchronize to iterate over a shared list
         for(Message m : toSend){
             channel.send(m);
         }
@@ -58,20 +60,26 @@ public class ReliableLink{
 
                 if((m.content()).equals("ack")){
 
+                    // Find the corresponding message in toSend to mark it as acked (ie. remove it)
                     Message m2 = Message.DUMMY;
-                    for(Message temp : toSend){
-                        if( m.sender().getId() == temp.destination().getId() &&
-                            m.id() == temp.id()
-                            ){
+
+                    synchronized(this) { // must synchronize to iterate on shared list
+                        for(Message temp : toSend){
+                            if( m.sender().getId() == temp.destination().getId() &&
+                                m.id() == temp.id())
+                            {
                                 m2 = temp;
                             }
+                        }
+                        toSend.remove(m2);
                     }
-                    toSend.remove(m2);
+                    // nothing to deliver from an ack
                     return Optional.empty();
                 }
 
                 else{
-                    send(new Message("ack", me, m.sender()));
+                    // ack with the same id to distinguish them
+                    send(new Message("ack", me, m.sender(), m.id()));
                     return Optional.of(m);
                 }
 

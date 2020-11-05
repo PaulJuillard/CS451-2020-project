@@ -57,7 +57,7 @@ public class Coordinator {
     private Socket connectToHost(String ip, int port) {
         Socket socket = null;
         try {
-	    socket = new Socket(ip, port);
+        socket = new Socket(ip, port);
             OutputStream output = socket.getOutputStream();
             DataOutputStream writer = new DataOutputStream(output);
 

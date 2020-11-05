@@ -25,7 +25,7 @@ public class Parser {
         barrierParser = new BarrierParser();
         signalParser = new SignalParser();
         outputParser = new OutputParser();
-        configParser = null;
+        configParser = new ConfigParser();
 
         int argsNum = args.length;
         if (argsNum != Constants.ARG_LIMIT_NO_CONFIG && argsNum != Constants.ARG_LIMIT_CONFIG) {
@@ -59,6 +59,7 @@ public class Parser {
         if (argsNum == Constants.ARG_LIMIT_CONFIG) {
             configParser = new ConfigParser();
             if (!configParser.populate(args[Constants.CONFIG_VALUE])) {
+                // TODO 
             }
         }
     }
@@ -100,8 +101,8 @@ public class Parser {
         return configParser != null;
     }
 
-    public String config() {
-        return configParser.getPath();
+    public int config() {
+        return configParser.getN();
     }
 
 }

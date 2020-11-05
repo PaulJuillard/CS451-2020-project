@@ -13,7 +13,6 @@ public class ReliableBroadcaster implements Runnable{
     // from[i] keeps all messages received from process i
     private Map<Integer, ArrayList<Message>> from = new HashMap<Integer, ArrayList<Message>>();
     private BestEffortBroadcaster beb;
-    private final List<Host> group;
 
 
     public ReliableBroadcaster(){
@@ -31,12 +30,6 @@ public class ReliableBroadcaster implements Runnable{
         }
 
         beb = new BestEffortBroadcaster();
-
-        group = new ArrayList<Host>();
-        /*(me.getId() % 2) == 0? 
-            Main.parser.hosts().subList(0, Main.parser.hosts().size() / 2) :
-            Main.parser.hosts().subList(Main.parser.hosts().size() / 2, Main.parser.hosts().size());
-        */
     }
 
     public void broadcast(String m){
@@ -44,7 +37,7 @@ public class ReliableBroadcaster implements Runnable{
     }
 
     public void relay(Message m){
-        for(Host host: group){
+        for(Host host: Main.parser.hosts()){
             Message m_prime = new Message(m.content(), m.sender(), host, m.id());
             beb.sendMessage(m_prime);
         }

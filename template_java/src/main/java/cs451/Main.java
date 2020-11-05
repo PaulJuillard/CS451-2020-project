@@ -28,8 +28,8 @@ public class Main {
         });
     }
 
-    public static void main(String[] args) {
-        parser = new Parser(args);
+    public static void main(String[] args) throws InterruptedException {
+        Parser parser = new Parser(args);
         parser.parse();
 
         initSignalHandlers();
@@ -43,10 +43,9 @@ public class Main {
         
         ReliableBroadcaster broadcaster = new ReliableBroadcaster();
 
-        //BestEffortBroadcaster broadcaster = new BestEffortBroadcaster();
-
-        //System.out.println("Barrier: " + parser.barrierIp() + ":" + parser.barrierPort());
-        
+        System.out.println("Barrier: " + parser.barrierIp() + ":" + parser.barrierPort());
+        System.out.println("Signal: " + parser.signalIp() + ":" + parser.signalPort());
+        System.out.println("Output: " + parser.output());
         // if config is defined; always check before parser.config()
         if (parser.hasConfig()) {
             System.out.println("Config: " + parser.config());
@@ -79,5 +78,20 @@ public class Main {
             if(h.getId() == id) return h;
         }
         return new Host();
+
+        Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(), parser.signalIp(), parser.signalPort());
+
+	System.out.println("Waiting for all processes for finish initialization");
+        coordinator.waitOnBarrier();
+
+	System.out.println("Broadcasting messages...");
+
+	System.out.println("Signaling end of broadcasting messages");
+        coordinator.finishedBroadcasting();
+
+	while (true) {
+	    // Sleep for 1 hour
+	    Thread.sleep(60 * 60 * 1000);
+	}
     }
 }

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-now=$(date)
-echo $now
-
 > hosts
 > logs/stdout
 > logs/log
@@ -11,15 +8,16 @@ echo $now
 
 for ((i=1;i<=$1;i++))
 do
-    echo $i localhost $((11000 + $i))  >> hosts
+    echo $i localhost $((11001 + $i))  >> hosts
 done
 
-./barrier.py --processes $1 >> ./logs/stdout &
+./barrier.py --port 11000 --processes $1 >> ./logs/stdout &
+./finishedSignal.py --port 11001 -p $1 >> ./logs/stdout &
 
 for ((i=1;i<=$1;i++))
 do
     > logs/outp$i
-    ./template_java/run.sh --id $i --hosts hosts --barrier localhost:11000 --output logs/outp$i >> logs/stdout &
+    ./template_java/run.sh --id $i --hosts hosts --barrier localhost:11999 --output logs/outp$i >> logs/stdout &
 done
 
 sleep 3

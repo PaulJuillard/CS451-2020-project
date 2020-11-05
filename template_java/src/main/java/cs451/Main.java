@@ -3,17 +3,20 @@ package cs451;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
+import java.io.FileWriter;
+
+import java.util.Optional;
 
 public class Main {
+
+    public static Parser parser;
 
     private static void handleSignal() {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
 
         //write/flush output file if necessary
-        System.out.println("Writing output.");
+        //System.out.println("Writing output.");
     }
 
     private static void initSignalHandlers() {
@@ -26,68 +29,55 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        Parser parser = new Parser(args);
+        parser = new Parser(args);
         parser.parse();
 
         initSignalHandlers();
 
-        // example
         long pid = ProcessHandle.current().pid();
-        System.out.println("My PID is " + pid + ".");
-        System.out.println("Use 'kill -SIGINT " + pid + " ' or 'kill -SIGTERM " + pid + " ' to stop processing packets.");
 
-        System.out.println("My id is " + parser.myId() + ".");
-        System.out.println("List of hosts is:");
+        //System.out.println("My PID is " + pid + ".");
+        //System.out.println("Use 'kill -SIGINT " + pid + " ' or 'kill -SIGTERM " + pid + " ' to stop processing packets.");
+        System.out.println("My id is " + Main.parser.myId() + ".");
+        //System.out.println("Output: " + Main.parser.output());
+        
+        ReliableBroadcaster broadcaster = new ReliableBroadcaster();
 
-        int myPort= 0;
+        //BestEffortBroadcaster broadcaster = new BestEffortBroadcaster();
 
-        for (Host host: parser.hosts()) {
-            System.out.println(host.getId() + ", " + host.getIp() + ", " + host.getPort());
-            if(host.getId() == parser.myId()){
-                myPort = host.getPort();
-            }
-        }
-
-        System.out.println("Barrier: " + parser.barrierIp() + ":" + parser.barrierPort());
-        System.out.println("Output: " + parser.output());
+        //System.out.println("Barrier: " + parser.barrierIp() + ":" + parser.barrierPort());
+        
         // if config is defined; always check before parser.config()
         if (parser.hasConfig()) {
             System.out.println("Config: " + parser.config());
         }
 
-        BarrierParser.Barrier.waitOnBarrier();
-
+        BarrierParser.Barrier.waitOnBarrier();        
         
+        Thread process = new Thread(broadcaster);
+        process.start();
 
-        // send 
-        try{
+        broadcaster.broadcast("Hey, i'm process number " + broadcaster.me().getId());
+        //broadcaster.broadcast(broadcaster.me().getId() + ":Do you like foo?" + broadcaster.me().getId());
 
-            DatagramSocket socket = new DatagramSocket(myPort);
-            
-            byte[] s_buf = new byte[256];
-            byte[] r_buf = new byte[256];
-            
-            String message = "Hi i'm host number" + pid;
-            for(Host host : parser.hosts()){
-                
-                InetAddress address = InetAddress.getByName(host.getIp());
-                s_buf = message.getBytes();
-                DatagramPacket packet = new DatagramPacket(s_buf, s_buf.length, address, host.getPort());
-                socket.send(packet);
-            }
-            
-            DatagramPacket r_p = new DatagramPacket(r_buf, r_buf.length);
-            while(true) {
+    }
 
-                socket.receive(r_p);
-                String received = new String(r_buf, StandardCharsets.UTF_8);
-                
-                System.out.println(received);
-            }
-            
-        } catch(Exception e){
-            System.out.println("oh oh...");
+    public static void writeOutput(String m){
+        try {
+            FileWriter myWriter = new FileWriter(parser.output(), true);
+            myWriter.write(m + "\n");
+            myWriter.close();
+            //System.out.println("Successfully wrote to the file.");
+          } catch (IOException e) {
+            System.out.println("An error occurred writing to output file");
+            e.printStackTrace();
+          }
+    }
+
+    public static Host hostFromId(int id){
+        for( Host h : parser.hosts()){
+            if(h.getId() == id) return h;
         }
-
+        return new Host();
     }
 }

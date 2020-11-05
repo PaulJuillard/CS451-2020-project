@@ -2,14 +2,17 @@ package cs451;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.io.Serializable;
 
-public class Host {
+public class Host implements Serializable{
 
     private static final String IP_START_REGEX = "/";
 
     private int id;
     private String ip;
     private int port = -1;
+
+    public Host(){} // Dummy intialization
 
     public boolean populate(String idString, String ipString, String portString) {
         try {

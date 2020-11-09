@@ -32,8 +32,13 @@ public class ReliableBroadcaster implements Runnable{
         beb = new BestEffortBroadcaster();
     }
 
+    public void broadcast(String m, int id){
+        beb.broadcast(m, id);
+    }
+
     public void broadcast(String m){
-        beb.broadcast(m);
+        beb.broadcast(m, Message.count);
+        Message.count++;
     }
 
     public void relay(Message m){
@@ -55,6 +60,7 @@ public class ReliableBroadcaster implements Runnable{
                 relay(m);
                 // add to from list
                 from.get(m.sender().getId()).add(m);
+                // TODO should we wait for an ack to make this uniform?
                 // deliver
                 Main.writeOutput(m.content());
             }

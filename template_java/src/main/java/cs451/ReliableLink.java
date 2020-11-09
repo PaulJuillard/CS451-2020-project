@@ -60,31 +60,33 @@ public class ReliableLink{
 
                 if((m.content()).equals("ack")){
 
-                    // Find the corresponding message in toSend to mark it as acked (ie. remove it)
-                    Message m2 = Message.DUMMY;
-
-                    synchronized(this) { // must synchronize to iterate on shared list
-                        for(Message temp : toSend){
-                            if( m.sender().getId() == temp.destination().getId() &&
-                                m.id() == temp.id())
-                            {
-                                m2 = temp;
-                            }
-                        }
-                        toSend.remove(m2);
-                    }
+                    // this is a synchronized function
+                    removeAcked(m);                    
                     // nothing to deliver from an ack
                     return Optional.empty();
                 }
-
-                else{
-                    // ack with the same id to distinguish them
+                else {
+                    // ack to dest with m's id
                     send(new Message("ack", me, m.sender(), m.id()));
                     return Optional.of(m);
                 }
 
             }
         }
+    }
+
+    private synchronized void removeAcked(Message m){
+        // find corresponding entry in toSend
+        // must synchronize to iterate on shared list
+        // TODO change datastructure to optimize.
+        Message m2 = Message.DUMMY;
+        for(Message temp : toSend){
+            if(m.sender().getId()==temp.destination().getId() && m.id()==temp.id()){
+                m2 = temp;
+            }
+        }
+        // remove it
+        toSend.remove(m2);
     }
 
 }

@@ -34,11 +34,12 @@ for ((i=1;i<=$P;i++))
 do
     > logs/outp$i
     #echo 'coucou'
-    ./template_java/run.sh --id $i --hosts hosts --barrier localhost:11000 --signal localhost:11001 --output logs/outp$i config >> logs/stdout &
+    ./template_java/run.sh --id $i --hosts hosts --barrier localhost:11000 --signal localhost:11001 --output logs/outp$i config >> logs/stdout & 
 done
 
-sleep 3
+sleep 12
 killall java
+sleep 1
 
 cat logs/stdout
 

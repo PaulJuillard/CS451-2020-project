@@ -29,37 +29,6 @@ public class Message implements Serializable {
     public Host sender() { return sender; }
     public Host destination() { return destination; }
     public int id() { return id;}
-
-    /*
-    public byte[] toBytes(){
-        try{
-            return serialize(this);
-        }
-        catch(IOException e){
-            System.out.println("Failure serializing message " + content);
-        }
-        byte[] m = new byte[256];
-
-        byte[] s = toByteArray(sender.getId());
-        byte[] id_ = toByteArray(id);
-        byte[] d = toByteArray(destination.getId());
-        byte[] c = content.getBytes();
-
-        int h = 0;
-
-        System.arraycopy(s, 0, m, h, s.length);
-        h += s.length;
-
-        System.arraycopy(id_, 0, m, h, id_.length);
-        h += id_.length;
-
-        System.arraycopy(d, 0, m, h, d.length);
-        h += d.length;
-
-        System.arraycopy(c, 0, m, h, c.length);
-        return m;
-    }
-    */
     
     @Override
     public boolean equals(Object o){
@@ -82,21 +51,6 @@ public class Message implements Serializable {
         return sender.getId() * 1000 + destination.getId() + content.hashCode();
     }
     
-    /*
-    //credits to https://stackoverflow.com/questions/2183240/java-integer-to-byte-array
-    private byte[] toByteArray(int value) {
-        return new byte[] {
-            (byte)(value >> 24),
-            (byte)(value >> 16),
-            (byte)(value >> 8),
-            (byte)value};
-    }
-    
-    // credits to https://stackoverflow.com/questions/7619058/convert-a-byte-array-to-integer-in-java-and-vice-versa
-    private int fromByteArray(byte[] bytes, int from) {
-        return bytes[from] << 24 | (bytes[from+1] & 0xFF) << 16 | (bytes[from+2] & 0xFF) << 8 | (bytes[from+3] & 0xFF);
-    }
-    */
     // credits to https://stackoverflow.com/questions/3736058/java-object-to-byte-and-byte-to-object-converter-for-tokyo-cabinet
     public static byte[] serialize(Message m) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();

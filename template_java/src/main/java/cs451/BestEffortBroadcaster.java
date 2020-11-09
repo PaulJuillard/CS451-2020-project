@@ -30,11 +30,15 @@ public class BestEffortBroadcaster implements Runnable{
 
     }
 
-    public void broadcast(String content){
+    public void broadcast(String content, int id){
         for(Host host : Main.parser.hosts()){
-            Message m = new Message(content, me, host, Message.count);
+            Message m = new Message(content, me, host, id);
             link.toSend(m);
         }
+    }
+
+    public void broadcast(String content){
+        broadcast(content, Message.count);
         Message.count++;
     }
 

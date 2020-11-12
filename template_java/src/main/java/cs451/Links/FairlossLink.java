@@ -1,17 +1,24 @@
+/*
+Implementation of Fair Loss Links
+credits to https://www.baeldung.com/udp-in-java
+
+Author: Paul Juillard
+Date: 11.10.20
+*/
 package cs451.Links;
 
 import cs451.*;
-import java.io.IOException;  // Import the IOException class to handle errors
+import java.io.IOException;
 import java.net.*;
 
-public class FairlossLink implements Runnable{
+public class FairlossLink extends Link{
 
-    byte[] s_buf = new byte[4196];
-    byte[] r_buf = new byte[4196];
+    private byte[] s_buf = new byte[4196];
+    private byte[] r_buf = new byte[4196];
 
-    DatagramSocket socket;
+    private DatagramSocket socket;
 
-    Observer observer;
+    private Observer observer;
 
 
     public FairlossLink(int myPort, Observer observer){
@@ -59,7 +66,6 @@ public class FairlossLink implements Runnable{
     }
 
     public void run(){ deliver(); }
-
 }
     
     

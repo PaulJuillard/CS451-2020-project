@@ -1,3 +1,10 @@
+/*
+Simple pair class
+credits to https://stackoverflow.com/questions/2670982/using-pairs-or-2-tuples-in-java 
+
+Author: Paul Juillard
+Date: 12.11.20
+*/
 package cs451;
 
 import java.util.Objects;

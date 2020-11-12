@@ -1,9 +1,7 @@
 package cs451;
 
 import cs451.Parsers.*;
-import cs451.Links.*;
 import cs451.Broadcasters.*;
-
 import java.io.FileWriter;
 import java.lang.StringBuilder;
 
@@ -13,7 +11,6 @@ public class Main {
     private static StringBuilder output = new StringBuilder();
 
     private static void handleSignal() {
-        //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
         try {
 
@@ -42,7 +39,7 @@ public class Main {
 
         initSignalHandlers();
 
-        long pid = ProcessHandle.current().pid();
+        //long pid = ProcessHandle.current().pid();
 
         // if config is defined; always check before parser.config()
         int nMessages = 1;
@@ -54,14 +51,9 @@ public class Main {
         
         coordinator.waitOnBarrier();
         
-        //ReliableBroadcaster broadcaster = new ReliableBroadcaster();
-        FifoBroadcaster broadcaster = new FifoBroadcaster();
-        //URBroadcaster broadcaster = new URBroadcaster();
-        //BestEffortBoadcaster broadcaster = new BestEffortBroadcaster();
+        Broadcaster broadcaster = new FifoBroadcaster();
 
-        // TODO start at one
         for(int m = 1; m <= nMessages; m++){
-            //broadcaster.broadcast("d " + broadcaster.me().getId() + " " + m);
             broadcaster.broadcast("d " + broadcaster.me().getId() + " " + m);
             writeOutput("b " + m);
         }
@@ -76,7 +68,6 @@ public class Main {
     }
 
     synchronized public static void writeOutput(String content){
-        //System.out.println("writing { " + content + " } to " + parser.output());
         output.append(content + "\n");
         
     }

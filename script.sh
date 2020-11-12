@@ -37,7 +37,7 @@ do
     ./template_java/run.sh --id $i --hosts hosts --barrier localhost:11000 --signal localhost:11001 --output logs/outp$i config >> logs/stdout & 
 done
 
-sleep $((10 + $P))
+sleep 10
 killall java
 sleep 1
 

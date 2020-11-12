@@ -1,5 +1,6 @@
 /*
-Implementations of Stubborn links as described in Intro slides
+Implementation of Reliable links
+as a combination of stubborness and acks.
 
 Author: Paul Juillard
 Date: 11.10.20
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class ReliableLink implements Runnable, Observer {
+public class ReliableLink extends Link implements Observer {
 
     private Host me;
     private HashSet<Message> delivered;
@@ -36,8 +37,8 @@ public class ReliableLink implements Runnable, Observer {
         sender.start();
     }
 
-    // TODO do i still need synchronized toSend
-    public synchronized void toSend(Message m){
+    // must synchronize to modify a synchronized
+    public synchronized void send(Message m){
         toSend.add(m);
     }
 
@@ -48,19 +49,8 @@ public class ReliableLink implements Runnable, Observer {
         }
     }
 
-    private void ack(Message m){
-        link.send(new Message("ack " + m.content() , me, m.originalSender(), m.sender(), m.id()));
-    }
-
     public void receive(Message m){
-        /*System.out.println(me.getId() + "   " + delivered.size());
-        if(delivered.size() == 40){
-            System.out.println("first or duplicate " + m.content());
-        }
-        if(delivered.size() > 40){
-            System.out.println("extra " + m.content());
-        }
-        */
+
         if((m.content().substring(0,3)).equals("ack")){
             // this is a synchronized function
             removeAcked(m);                    
@@ -73,7 +63,23 @@ public class ReliableLink implements Runnable, Observer {
         }
 
         delivered.add(m);
+    }
 
+    public void run(){
+        while(true){
+            try{
+                Thread.sleep(100);
+            }
+            catch(Exception e){
+                System.out.println("error waiting sender thread in perfect link");
+                e.printStackTrace();
+            }
+            send();
+        }
+    }
+
+    private void ack(Message m){
+        link.send(new Message("ack " + m.content() , me, m.originalSender(), m.sender(), m.id()));
     }
 
     private synchronized void removeAcked(Message m){
@@ -95,21 +101,9 @@ public class ReliableLink implements Runnable, Observer {
         // remove it from messages to send
         toSend.remove(m2);
     }
+    
     private String ackContent(Message m){
-        // assert it is ack
         return m.content().substring(4);
     }
 
-    public void run(){
-        while(true){
-            try{
-                Thread.sleep(100);
-            }
-            catch(Exception e){
-                System.out.println("error waiting sender thread in perfect link");
-                e.printStackTrace();
-            }
-            send();
-        }
-    }
 }

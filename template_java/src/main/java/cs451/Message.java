@@ -1,11 +1,13 @@
+/*
+Message Class
+
+Author: Paul Juillard
+Date: 11.10.20
+*/
 package cs451;
-import java.nio.charset.StandardCharsets;
 import java.io.*;
 import java.util.Objects;
 
-
-// TODO remove magic numbers
-// TODO identify messages with uid!
 public class Message implements Serializable {
 
     public static final Message DUMMY = null;
@@ -16,14 +18,6 @@ public class Message implements Serializable {
     private Host destination;
     private int id;
 
-    public Message(String m, Host from, Host to, int id){
-        content = m;
-        sender = from;
-        originalSender = from;
-        destination = to;
-        this.id = id;
-    }
-
     public Message(String m, Host from, Host oFrom, Host to, int id){
         content = m;
         sender = from;
@@ -31,17 +25,23 @@ public class Message implements Serializable {
         destination = to;
         this.id = id;
     }
+    
+    public Message(String m, Host from, Host to, int id){
+        this(m, from, from, to, id);
+    }
 
     public Message(String m, Host from, Host to){
         this(m, from, to, count++);
     }
 
+    // getters
     public String content(){ return content; }
     public Host sender() { return sender; }
     public Host originalSender() { return originalSender; }
     public Host destination() { return destination; }
     public int id() { return id;}
     
+    // redefine equals and hashcode for structural comparison
     @Override
     public boolean equals(Object o){
         if(o == null || o.getClass() != this.getClass()){

@@ -1,3 +1,10 @@
+/*
+Reliable Broadcaster.
+Uses Best Effort Broadcast.
+
+Author: Paul Juillard
+Date: 11.10.20
+*/
 package cs451.Broadcasters;
 
 import cs451.*;
@@ -5,10 +12,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ReliableBroadcaster implements Observer {
+public class ReliableBroadcaster extends Broadcaster {
     
     private Host me;
-    //private ArrayList<Host> correct = new ArrayList<Host>(Main.parser.hosts());
+
     // from[i] keeps all messages received from process i
     private Map<Integer, ArrayList<Message>> from = new HashMap<Integer, ArrayList<Message>>();
     private BestEffortBroadcaster beb;
@@ -16,8 +23,6 @@ public class ReliableBroadcaster implements Observer {
 
     public ReliableBroadcaster(){
         
-        //pid = ProcessHandle.current().pid();
-
         me = new Host();
 
         for (Host host: Main.parser.hosts()) {
@@ -43,7 +48,7 @@ public class ReliableBroadcaster implements Observer {
     public void relay(Message m){
         for(Host host: Main.parser.hosts()){
             Message m_prime = new Message(m.content(), m.sender(), host, m.id());
-            beb.link().toSend(m_prime);
+            beb.link().send(m_prime);
         }
     }
 

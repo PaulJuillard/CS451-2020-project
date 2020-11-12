@@ -3,6 +3,7 @@ package cs451;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.io.Serializable;
+import java.util.Objects;
 
 public class Host implements Serializable{
 
@@ -56,4 +57,23 @@ public class Host implements Serializable{
         return port;
     }
 
+    @Override
+    public boolean equals(Object o){
+        if(o == null || o.getClass() != this.getClass()){
+            return false;
+       }
+       else{
+           Host h2 = (Host) o;
+       return (
+           this.id == h2.getId() &&
+           this.ip == h2.getIp() &&
+           this.port == h2.getPort()
+           );
+       }
+    }
+
+    @Override
+    public int hashCode(){
+        return Objects.hash(id, ip, port);
+    }
 }

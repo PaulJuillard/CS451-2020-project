@@ -1,4 +1,4 @@
-package cs451;
+package cs451.Parsers;
 
 import java.io.FileReader;
 import java.io.BufferedReader;

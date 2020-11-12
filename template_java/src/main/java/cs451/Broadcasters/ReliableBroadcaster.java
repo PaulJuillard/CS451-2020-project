@@ -1,12 +1,11 @@
-package cs451;
-import java.util.List;
+package cs451.Broadcasters;
+
+import cs451.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
-
-public class ReliableBroadcaster implements Runnable{
+public class ReliableBroadcaster implements Observer {
     
     private Host me;
     //private ArrayList<Host> correct = new ArrayList<Host>(Main.parser.hosts());
@@ -29,52 +28,35 @@ public class ReliableBroadcaster implements Runnable{
             }
         }
 
-        beb = new BestEffortBroadcaster();
+        beb = new BestEffortBroadcaster(this);
     }
 
     public void broadcast(String m, int id){
-        beb.broadcast(m, id);
+        beb.broadcast(m, me, id);
     }
 
     public void broadcast(String m){
-        beb.broadcast(m, Message.count);
+        beb.broadcast(m, me, Message.count);
         Message.count++;
     }
 
     public void relay(Message m){
         for(Host host: Main.parser.hosts()){
             Message m_prime = new Message(m.content(), m.sender(), host, m.id());
-            beb.sendMessage(m_prime);
+            beb.link().toSend(m_prime);
         }
     }
 
-    public void deliver(){
-        Optional<Message> m_ = beb.receive();
-        if(m_.isEmpty()) return;
-        else {
+    public void receive(Message m){
+        if( !from.get(m.sender().getId()).contains(m)){
 
-            Message m = m_.get();
+            relay(m);
 
-            if( !from.get(m.sender().getId()).contains(m)){
-                // relay
-                relay(m);
-                // add to from list
-                from.get(m.sender().getId()).add(m);
-                // TODO should we wait for an ack to make this uniform?
-                // deliver
-                Main.writeOutput(m.content());
-            }
-        }
-    }
+            // add to from list
+            from.get(m.sender().getId()).add(m);
 
-    public void send(){
-        beb.send();
-    }
-
-    public void run() {
-        while(true){
-            deliver();
-            send();
+            // deliver
+            Main.writeOutput(m.content());
         }
     }
 

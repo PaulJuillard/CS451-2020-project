@@ -1,12 +1,11 @@
 package cs451;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import cs451.Parsers.*;
+import cs451.Links.*;
+import cs451.Broadcasters.*;
+
 import java.io.FileWriter;
 import java.lang.StringBuilder;
-
-import java.util.Optional;
 
 public class Main {
 
@@ -55,13 +54,14 @@ public class Main {
         
         coordinator.waitOnBarrier();
         
-        
         //ReliableBroadcaster broadcaster = new ReliableBroadcaster();
-        URBroadcaster broadcaster = new URBroadcaster();
-        Thread process = new Thread(broadcaster);
-        process.start();
+        FifoBroadcaster broadcaster = new FifoBroadcaster();
+        //URBroadcaster broadcaster = new URBroadcaster();
+        //BestEffortBoadcaster broadcaster = new BestEffortBroadcaster();
 
-        for(int m = 0; m < nMessages; m++){
+        // TODO start at one
+        for(int m = 1; m <= nMessages; m++){
+            //broadcaster.broadcast("d " + broadcaster.me().getId() + " " + m);
             broadcaster.broadcast("d " + broadcaster.me().getId() + " " + m);
             writeOutput("b " + m);
         }
@@ -78,17 +78,7 @@ public class Main {
     synchronized public static void writeOutput(String content){
         //System.out.println("writing { " + content + " } to " + parser.output());
         output.append(content + "\n");
-        /*
-        try{
-        FileWriter myWriter = new FileWriter(parser.output(), true);
-        myWriter.append(content);
-        myWriter.close();
-        }
-        catch (Exception e) {
-            System.out.println("failed to write to " + parser.output());
-            System.out.flush();
-        }
-        */
+        
     }
 
     public static Host hostFromId(int id){

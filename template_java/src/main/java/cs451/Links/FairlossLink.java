@@ -1,25 +1,27 @@
-package cs451;
+package cs451.Links;
 
-import java.io.FileWriter;   // Import the FileWriter class
+import cs451.*;
 import java.io.IOException;  // Import the IOException class to handle errors
 import java.net.*;
-import java.util.Optional;
 
-public class FairlossLink{
+public class FairlossLink implements Runnable{
 
     byte[] s_buf = new byte[4196];
     byte[] r_buf = new byte[4196];
 
     DatagramSocket socket;
 
+    Observer observer;
 
-    public FairlossLink(int myPort){
+
+    public FairlossLink(int myPort, Observer observer){
         try{
         this.socket = new DatagramSocket(myPort);
-        socket.setSoTimeout(50);
+        //socket.setSoTimeout(50);
         }
         catch(Exception e){ System.out.println("flLink: error initializing socket");}
 
+        this.observer = observer;
     }
 
     public void send(Message m){
@@ -35,25 +37,28 @@ public class FairlossLink{
 
     }
 
-    public Optional<Message> deliver(){
-        try{
+    public void deliver(){
+
+        while(true){
+
+            try{
             DatagramPacket r_p = new DatagramPacket(r_buf, r_buf.length);
             socket.receive(r_p);
             Message m = Message.deserialize(r_buf);
-            return Optional.of(m);
-        } 
-        catch(SocketTimeoutException to){ 
-            return Optional.empty();
+            observer.receive(m);
+            }
+            catch(IOException e){
+                System.out.println("FairLossLink: error receiving");
+                e.printStackTrace();
+            }
+            catch(ClassNotFoundException e){
+                System.out.println("FairLossLink: error deserializing");
+                e.printStackTrace();
+            }
         }
-        catch(IOException io){
-            System.out.println("fll: error deserializing");
-        }
-        catch(Exception e)
-        {
-            System.out.println("fll: error delivering from socket");
-        }
-        return Optional.empty();
     }
+
+    public void run(){ deliver(); }
 
 }
     

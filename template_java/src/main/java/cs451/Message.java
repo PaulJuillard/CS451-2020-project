@@ -1,6 +1,7 @@
 package cs451;
 import java.nio.charset.StandardCharsets;
 import java.io.*;
+import java.util.Objects;
 
 
 // TODO remove magic numbers
@@ -11,12 +12,22 @@ public class Message implements Serializable {
     transient public static int count = 0;
     public String content;
     private Host sender;
+    private Host originalSender;
     private Host destination;
     private int id;
 
     public Message(String m, Host from, Host to, int id){
         content = m;
         sender = from;
+        originalSender = from;
+        destination = to;
+        this.id = id;
+    }
+
+    public Message(String m, Host from, Host oFrom, Host to, int id){
+        content = m;
+        sender = from;
+        originalSender = oFrom;
         destination = to;
         this.id = id;
     }
@@ -27,6 +38,7 @@ public class Message implements Serializable {
 
     public String content(){ return content; }
     public Host sender() { return sender; }
+    public Host originalSender() { return originalSender; }
     public Host destination() { return destination; }
     public int id() { return id;}
     
@@ -41,14 +53,15 @@ public class Message implements Serializable {
             this.sender.getId() == m2.sender().getId() &&
             this.id == m2.id &&
             this.content.equals(m2.content()) &&
-            this.destination.getId() == m2.destination().getId()
+            this.destination.getId() == m2.destination().getId() &&
+            this.originalSender.getId() == m2.originalSender.getId()
             );
         }
     }
     
     @Override
     public int hashCode(){
-        return sender.getId() * 1000 + destination.getId() + content.hashCode();
+        return Objects.hash(content, sender, originalSender, destination, id);
     }
     
     // credits to https://stackoverflow.com/questions/3736058/java-object-to-byte-and-byte-to-object-converter-for-tokyo-cabinet

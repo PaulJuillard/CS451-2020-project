@@ -65,15 +65,13 @@ public class Host implements Serializable{
        else{
            Host h2 = (Host) o;
        return (
-           this.id == h2.getId() &&
-           this.ip == h2.getIp() &&
-           this.port == h2.getPort()
+           this.id == h2.getId()
            );
        }
     }
 
     @Override
     public int hashCode(){
-        return Objects.hash(id, ip, port);
+        return Objects.hash(id);
     }
 }

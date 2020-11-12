@@ -8,7 +8,7 @@ package cs451.Links;
 
 import cs451.*;
 
-abstract class Link implements Runnable {
+abstract public class Link implements Runnable {
     
     private Observer observer;
 

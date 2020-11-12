@@ -25,13 +25,6 @@ public class FifoBroadcaster extends Broadcaster {
     private Map<Integer, PriorityQueue<Message>> pending = new HashMap<Integer, PriorityQueue<Message>>();
     // Maps host id to next message to deliver by id
     private Map<Integer, Integer> next = new HashMap<Integer, Integer>();
-    // A comparator to order messages based on sequence number
-    private Comparator<Message> messageComparator= new Comparator<Message>() {
-        @Override
-        public int compare(Message a, Message b){
-            return Integer.compare(a.id(), b.id());
-        }
-    };
 
     public FifoBroadcaster(){
 
@@ -39,7 +32,7 @@ public class FifoBroadcaster extends Broadcaster {
         for (Host host: Main.parser.hosts()) {
             
             next.put(host.getId(), 0);
-            pending.put(host.getId(), new PriorityQueue<Message>(10, messageComparator));
+            pending.put(host.getId(), new PriorityQueue<Message>(10, Message.MessageIdComparator));
             if(host.getId() == Main.parser.myId()){
                 me = host;
             }

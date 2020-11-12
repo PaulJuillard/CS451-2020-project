@@ -15,6 +15,7 @@ public class ConfigParser {
         this.path=path;
         BufferedReader r = new BufferedReader(new FileReader(path));
         nMessages = Integer.parseInt(r.readLine());
+        r.close();
         } catch (IOException e) {
             System.err.println("Problem in config file");
         }

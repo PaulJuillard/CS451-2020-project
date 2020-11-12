@@ -7,11 +7,21 @@ Date: 11.10.20
 package cs451;
 import java.io.*;
 import java.util.Objects;
+import java.util.Comparator;
 
 public class Message implements Serializable {
 
     public static final Message DUMMY = null;
     transient public static int count = 0;
+
+    // A comparator to order messages based on sequence number
+    public static Comparator<Message> MessageIdComparator= new Comparator<Message>() {
+        @Override
+        public int compare(Message a, Message b){
+            return Integer.compare(a.id(), b.id());
+        }
+    };
+
     public String content;
     private Host sender;
     private Host originalSender;
@@ -31,7 +41,7 @@ public class Message implements Serializable {
     }
 
     public Message(String m, Host from, Host to){
-        this(m, from, to, count++);
+        this(m, from, from, to, count++);
     }
 
     // getters

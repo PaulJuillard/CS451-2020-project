@@ -13,7 +13,7 @@ import cs451.Links.*;
 public class BestEffortBroadcaster extends Broadcaster {
 
     private Host me;
-    private ReliableLink link;
+    private Link link;
 
     private Observer observer;
 
@@ -28,6 +28,7 @@ public class BestEffortBroadcaster extends Broadcaster {
         }
 
         link = new ReliableLink(me, this);
+        //link = new ThreadedReliableLink(me, this);
 
         this.observer = observer;
     }
@@ -50,7 +51,7 @@ public class BestEffortBroadcaster extends Broadcaster {
         observer.receive(m);
     }
 
-    public ReliableLink link(){ return link;}
+    public Link link(){ return link;}
     public Host me(){ return me;}
         
 }

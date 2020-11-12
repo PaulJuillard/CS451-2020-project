@@ -1,9 +1,13 @@
 /*
-Implementation of Reliable links
-as a combination of stubborness and acks.
+Implementation of Reliable links making use of HostSender Threads
+Each thread is a one to one sender by host
+This link receives for all and acts as master for the pool of threads
+
+Unfortunately does not improve performance as it is.
+Hyperparameters are INITIAL_TIMER and TIMER_INCREASE_RATIO
 
 Author: Paul Juillard
-Date: 11.10.20
+Date: 12.11.20
 */
 package cs451.Links;
 
@@ -17,23 +21,30 @@ import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.Comparator;
 
-public class ReliableLink extends Link implements Observer {
+public class ThreadedReliableLink extends Link implements Observer {
 
     private Host me;
     private HashSet<Message> delivered;
+    private long INITIAL_TIMER = 20; // timer in ms before retransmission
+    private double TIMER_INCREASE_RATIO = 1;
 
-    private List<Message> toSend;
+    private Map<Host, HostSender> hostSenders = new HashMap<Host, HostSender>();
+    //private Map<Host, List<Message>> toSend;
     
-    private FairlossLink link;
+    private Link link;
     
     private Observer observer;
 
-    public ReliableLink(Host me, Observer observer){
+    public ThreadedReliableLink(Host me, Observer observer){
         this.me = me;
         this.link = new FairlossLink(me.getPort(), this);
         this.delivered = new HashSet<Message>();
-        this.toSend = Collections.synchronizedList(new ArrayList<Message>());
+
         this.observer = observer;
+
+        for(Host h : Main.parser.hosts()){
+            hostSenders.put(h, new HostSender(h, INITIAL_TIMER, TIMER_INCREASE_RATIO, link)); 
+        }
 
         Thread sender = new Thread(this);
         Thread listen = new Thread(link);
@@ -43,18 +54,21 @@ public class ReliableLink extends Link implements Observer {
     }
 
     // must synchronize to modify a synchronized
-    public synchronized void send(Message m){
-        toSend.add(m);
+    public void send(Message m){
+        //toSend.add(m);
+        hostSenders.get(m.destination()).addToSend(m);
     }
 
+    /*
     public synchronized void send(){
         // must synchronize to iterate over a shared list
         toSend.forEach( m -> link.send(m));
     }
+    */
 
     public void receive(Message m){
 
-        if((m.content().substring(0,3)).equals("ack")){
+        if(isAck(m)){
             // this is a synchronized function
             removeAcked(m);                    
             // nothing to deliver from an ack
@@ -69,44 +83,30 @@ public class ReliableLink extends Link implements Observer {
     }
 
     public void run(){
-        while(true){
-            try{
-                Thread.sleep(100);
-            }
-            catch(Exception e){
-                System.out.println("error waiting sender thread in perfect link");
-                e.printStackTrace();
-            }
-            send();
-        }
+        // start all host senders
+        hostSenders.values().forEach( hs -> new Thread(hs).start() );
     }
 
     private void ack(Message m){
         link.send(new Message("ack " + m.content() , me, m.originalSender(), m.sender(), m.id()));
     }
 
-    private synchronized void removeAcked(Message m){
+    private synchronized void removeAcked(Message ack){
 
         // TODO optimize
+        // Find corresponding Thread
+        HostSender hs = hostSenders.get(ack.sender());
 
-        // find corresponding message
-        Message m2 = Message.DUMMY;
-        for(Message temp : toSend){
-            if( 
-                m.sender().getId() == temp.destination().getId() && // destination is sender
-                m.id() == temp.id() && // id is correct
-                ackContent(m).equals(temp.content())
-            )
-            {
-                m2 = temp;
-            }
-        }
-        // remove it from messages to send
-        toSend.remove(m2);
+        // create equivalent message
+        Message acked = new Message(ackContent(ack), me, ack.originalSender(), ack.sender(), ack.id());
+        hs.stopSending(acked);
+
     }
     
     private String ackContent(Message m){
         return m.content().substring(4);
     }
+
+    private boolean isAck(Message m){ return (m.content().substring(0,3)).equals("ack"); }
 
 }

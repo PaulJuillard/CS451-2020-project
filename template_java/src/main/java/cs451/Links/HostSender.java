@@ -1,3 +1,13 @@
+/*
+Destination specific Sender link. 
+It can only send to its sender.
+Send messgaes in batches.
+Is runnable.
+Attempts at adapting sending period based on acks (childish TCP-like behavior)
+
+Author: Paul Juillard
+Date: 13.11.20
+*/
 package cs451.Links;
 
 import cs451.*;

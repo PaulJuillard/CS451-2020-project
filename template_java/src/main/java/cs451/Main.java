@@ -39,8 +39,6 @@ public class Main {
 
         initSignalHandlers();
 
-        //long pid = ProcessHandle.current().pid();
-
         // if config is defined; always check before parser.config()
         int nMessages = 1;
         if (parser.hasConfig()) {

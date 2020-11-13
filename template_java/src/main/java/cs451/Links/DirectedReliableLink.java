@@ -1,9 +1,10 @@
 /*
-Implementation of Reliable links
+Implementation of Reliable Links with Host relative pending messages lists
 as a combination of stubborness and acks.
+Sends messages in batches.
 
 Author: Paul Juillard
-Date: 11.10.20
+Date: 13.11.20
 */
 package cs451.Links;
 
@@ -16,12 +17,12 @@ import java.util.HashMap;
 
 public class DirectedReliableLink extends Link implements Observer {
 
-    public static final int BATCH_SIZE = 4;
+    private static final int BATCH_SIZE = 4;
     private static final int SEND_PERIOD = 50;
 
     private Host me;
-    private HashSet<Message> delivered;
 
+    private HashSet<Message> delivered;
     private Map<Host, List<Message>> toSend;
     
     private FairlossLink link;
@@ -44,23 +45,25 @@ public class DirectedReliableLink extends Link implements Observer {
         sender.start();
     }
 
-    // must synchronize to modify a synchronized
+    // must synchronize to modify a shared list
     public synchronized void send(Message m){
-        //System.out.print("+");
         toSend.get(m.destination()).add(m);
     }
     
+    // must synchronize to iterate over a shared list
     public synchronized void send(){
-        // must synchronize to iterate over a shared list
+        // batch send for each host
         toSend.values().forEach(ms -> batchSend(ms));
     }
 
     private void batchSend(List<Message> ms){
         int head = 0;
+        // send batched
         while(head-ms.size() > 4){
             link.send(ms.subList(head, head+BATCH_SIZE));
             head+= BATCH_SIZE;
         }
+        // send remaining
         for(; head < ms.size(); head++){
             link.send(ms.get(head));
         }
@@ -68,13 +71,13 @@ public class DirectedReliableLink extends Link implements Observer {
 
     public void receive(Message m){
         
-        if((m.content().substring(0,3)).equals("ack")){
+        if(isAck(m)){
             // this is a synchronized function
             removeAcked(m);                    
             // nothing to deliver from an ack
         }
         else {
-            // ack to dest with m's id
+            // ack this message
             ack(m);
             if(!delivered.contains(m)) observer.receive(m);
         }
@@ -97,8 +100,10 @@ public class DirectedReliableLink extends Link implements Observer {
 
     private void ack(Message m){
         // construct ack message
+        // swap sender and destination, keep original id to identify which message the ack refers to
         Message ack = new Message("ack " + m.content(), me, m.originalSender(), m.sender(), m.id());
-        // add to tosend
+        // dont add to to send because acks are not acked (and will thus not be removed from tosend)
+        // instead send it directly
         link.send(ack);
     }
 
@@ -112,5 +117,7 @@ public class DirectedReliableLink extends Link implements Observer {
     private String ackContent(Message m){
         return m.content().substring(4);
     }
+
+    private void isAck(Message m){ return m.content().substring(0,3).equals("ack");}
 
 }

@@ -1,7 +1,7 @@
 /*
 Uniform Reliable Broadcast
 Inspired from algorithm 3.4 of 'Reliable and Secure Distributed Programming' 2cd Edition
-Uses Besr Effort Broadcast.
+Uses Best Effort Broadcast.
 
 Author: Paul Juillard
 Date: 12.11.20
@@ -52,13 +52,11 @@ public class URBroadcaster extends Broadcaster{
         
         Pair<Integer, Integer> smPair = smPair(m);
 
-        if(delivered.contains(smPair)){ return; }
-        else {
+        if(!delivered.contains(smPair)){ 
 
             // add this sender to acked for this message
             // set prevents duplicates
-            
-            if(!ack.containsKey(smPair)) ack.put(smPair, new HashSet<>());
+            if(!ack.containsKey(smPair)){ ack.put(smPair, new HashSet<>()); }
             ack.get(smPair).add(m.sender().getId());
 
             // if this message is already known

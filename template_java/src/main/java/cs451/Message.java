@@ -15,12 +15,11 @@ import cs451.Links.*;
 
 public class Message implements Serializable {
 
-    public static final Message DUMMY = null;
     public static int count = 0;
     public static final int MESSAGE_BYTES = 256;
 
     // A comparator to order messages based on sequence number
-    public static Comparator<Message> MessageIdComparator= new Comparator<Message>() {
+    public static final Comparator<Message> MessageIdComparator= new Comparator<Message>() {
         @Override
         public int compare(Message a, Message b){
             return Integer.compare(a.id(), b.id());
@@ -34,10 +33,10 @@ public class Message implements Serializable {
     private int id;
 
     public Message(String m, Host from, Host oFrom, Host to, int id){
-        content = m;
-        sender = from;
-        originalSender = oFrom;
-        destination = to;
+        this.content = m;
+        this.sender = from;
+        this.originalSender = oFrom;
+        this.destination = to;
         this.id = id;
     }
     
@@ -54,31 +53,7 @@ public class Message implements Serializable {
     public Host sender() { return sender; }
     public Host originalSender() { return originalSender; }
     public Host destination() { return destination; }
-    public int id() { return id;}
-    
-    // redefine equals and hashcode for structural comparison
-    @Override
-    public boolean equals(Object o){
-        if(o == null || o.getClass() != this.getClass()){
-             return false;
-        }
-        else{
-            Message m2 = (Message)o;
-        return (
-            this.sender.getId() == m2.sender().getId() &&
-            this.id == m2.id &&
-            this.content.equals(m2.content()) &&
-            this.destination.getId() == m2.destination().getId() &&
-            this.originalSender.getId() == m2.originalSender.getId()
-            );
-        }
-    }
-    
-    @Override
-    public int hashCode(){
-        return Objects.hash(content, sender, originalSender, destination, id);
-    }
-    
+    public int id() { return id;}    
     
     public static byte[] serialize(Message m){
         
@@ -122,10 +97,10 @@ public class Message implements Serializable {
     }
 
 
-    public static List<Message> deserializeBatch(byte[] buf){
+    public static List<Message> deserializeBatch(byte[] buf, int n){
         int h = 1; // the first byte is batch indicator
-        List<Message> ms = new ArrayList<Message>();
-        for(int i = 0; i < DirectedReliableLink.BATCH_SIZE; i++){
+        List<Message> ms = new ArrayList<Message>(n);
+        for(int i = 0; i < n; i++){
             ms.add(deserialize(buf, h));
             h += MESSAGE_BYTES;
         }
@@ -146,23 +121,28 @@ public class Message implements Serializable {
     public static int fromByteArray(byte[] bytes, int from) {
         return bytes[from] << 24 | (bytes[from+1] & 0xFF) << 16 | (bytes[from+2] & 0xFF) << 8 | (bytes[from+3] & 0xFF);
     }
-    
 
-    /*
-    // credits to https://stackoverflow.com/questions/3736058/java-object-to-byte-and-byte-to-object-converter-for-tokyo-cabinet
-    public static byte[] serialize(Message m) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ObjectOutputStream os = new ObjectOutputStream(out);
-        os.writeObject(m);
-        return out.toByteArray();
+    // redefine equals and hashcode for structural comparison
+    @Override
+    public boolean equals(Object o){
+        if(o == null || o.getClass() != this.getClass()){
+             return false;
+        }
+        else{
+            Message m2 = (Message)o;
+        return (
+            this.sender.getId() == m2.sender().getId() &&
+            this.id == m2.id &&
+            this.content.equals(m2.content()) &&
+            this.destination.getId() == m2.destination().getId() &&
+            this.originalSender.getId() == m2.originalSender.getId()
+            );
+        }
     }
-    */
-    /*
-    public static Message deserialize(byte[] data) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream in = new ByteArrayInputStream(data);
-        ObjectInputStream is = new ObjectInputStream(in);
-        return (Message) is.readObject();
+    
+    @Override
+    public int hashCode(){
+        return Objects.hash(content, sender, originalSender, destination, id);
     }
-    */
 
 }

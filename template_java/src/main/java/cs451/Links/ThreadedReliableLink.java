@@ -1,7 +1,9 @@
 /*
 Implementation of Reliable links making use of HostSender Threads
 Each thread is a one to one sender by host
-This link receives for all and acts as master for the pool of threads
+This link receives for all hosts and acts as master for the pool of threads.
+
+TODO optimize with thread pools instead of lists of runnable
 
 Unfortunately does not improve performance as it is.
 Hyperparameters are INITIAL_TIMER and TIMER_INCREASE_RATIO
@@ -24,7 +26,6 @@ public class ThreadedReliableLink extends Link implements Observer {
     private double TIMER_INCREASE_RATIO = 1.5;
 
     private Map<Host, HostSender> hostSenders = new HashMap<Host, HostSender>();
-    //private Map<Host, List<Message>> toSend;
     
     private Link link;
     
@@ -54,13 +55,6 @@ public class ThreadedReliableLink extends Link implements Observer {
         hostSenders.get(m.destination()).addToSend(m);
     }
 
-    /*
-    public synchronized void send(){
-        // must synchronize to iterate over a shared list
-        toSend.forEach( m -> link.send(m));
-    }
-    */
-
     public void receive(Message m){
 
         if(isAck(m)){
@@ -71,10 +65,12 @@ public class ThreadedReliableLink extends Link implements Observer {
         else {
             // ack to dest with m's id
             ack(m);
-            if(!delivered.contains(m)) observer.receive(m);
+            if(!delivered.contains(m)){
+                observer.receive(m);
+                delivered.add(m);
+            }
         }
 
-        delivered.add(m);
     }
 
     public void run(){
@@ -88,14 +84,12 @@ public class ThreadedReliableLink extends Link implements Observer {
 
     private synchronized void removeAcked(Message ack){
 
-        // TODO optimize
         // Find corresponding Thread
         HostSender hs = hostSenders.get(ack.sender());
 
         // create equivalent message
         Message acked = new Message(ackContent(ack), me, ack.originalSender(), ack.sender(), ack.id());
         hs.stopSending(acked);
-
     }
     
     private String ackContent(Message m){

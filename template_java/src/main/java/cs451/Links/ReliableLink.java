@@ -1,5 +1,5 @@
 /*
-Implementation of Reliable links
+Implementation of Basic Reliable links
 as a combination of stubborness and acks.
 
 Author: Paul Juillard

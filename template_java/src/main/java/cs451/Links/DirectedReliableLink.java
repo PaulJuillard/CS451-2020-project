@@ -17,7 +17,7 @@ import java.util.HashMap;
 
 public class DirectedReliableLink extends Link implements Observer {
 
-    private static final int BATCH_SIZE = 4;
+    public static final int BATCH_SIZE = 4;
     private static final int SEND_PERIOD = 50;
 
     private Host me;
@@ -118,6 +118,6 @@ public class DirectedReliableLink extends Link implements Observer {
         return m.content().substring(4);
     }
 
-    private void isAck(Message m){ return m.content().substring(0,3).equals("ack");}
+    private boolean isAck(Message m){ return m.content().substring(0,3).equals("ack");}
 
 }

@@ -37,7 +37,7 @@ public class FairlossLink extends Link{
 
     public void send(Message m){
         s_buf = Message.serialize(m);
-        send();
+        send(m.destination());
     }
 
     @Override // override abstract class method
@@ -54,18 +54,18 @@ public class FairlossLink extends Link{
 
         Host destination = ms.get(0).destination();
 
-        send();
+        send(destination);
         
     }
 
-    private void send(){
+    private void send(Host destination){
         try{
             InetAddress address = InetAddress.getByName(destination.getIp());
             DatagramPacket packet = new DatagramPacket(s_buf, s_buf.length, address, destination.getPort());
             socket.send(packet);
         }
         catch(Exception e){ 
-            System.out.println("flLink: error sending message " + ms.toString() + " to host " + destination.getId());
+            System.out.println("flLink: error sending message to host " + destination.getId());
         }
     }
 
@@ -77,7 +77,7 @@ public class FairlossLink extends Link{
             DatagramPacket r_p = new DatagramPacket(r_buf, r_buf.length);
             socket.receive(r_p);
             if(r_buf[0] == BATCH_INDICATOR){
-                List<Message> ms = Message.deserializeBatch(r_buf);
+                List<Message> ms = Message.deserializeBatch(r_buf, DirectedReliableLink.BATCH_SIZE);
                 for(Message m : ms){
                     observer.receive(m);
                 }

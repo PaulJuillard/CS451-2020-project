@@ -88,7 +88,7 @@ public class ReliableLink extends Link implements Observer {
         // TODO optimize
 
         // find corresponding message
-        Message m2 = Message.DUMMY;
+        Message m2 = null;
         for(Message temp : toSend){
             if( 
                 m.sender().getId() == temp.destination().getId() && // destination is sender
@@ -100,7 +100,7 @@ public class ReliableLink extends Link implements Observer {
             }
         }
         // remove it from messages to send
-        toSend.remove(m2);
+        if(m2 != null) toSend.remove(m2);
     }
     
     private String ackContent(Message m){

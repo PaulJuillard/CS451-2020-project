@@ -27,8 +27,9 @@ public class BestEffortBroadcaster extends Broadcaster {
             }
         }
 
-        link = new ReliableLink(me, this);
+        //link = new ReliableLink(me, this);
         //link = new ThreadedReliableLink(me, this);
+        link = new DirectedReliableLink(me, this);
 
         this.observer = observer;
     }

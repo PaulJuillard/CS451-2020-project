@@ -11,24 +11,30 @@ import cs451.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
 
-public class ReliableLink extends Link implements Observer {
+public class DirectedReliableLink extends Link implements Observer {
+
+    public static final int BATCH_SIZE = 4;
+    private static final int SEND_PERIOD = 100;
 
     private Host me;
     private HashSet<Message> delivered;
 
-    private List<Message> toSend;
+    private Map<Host, List<Message>> toSend;
     
     private FairlossLink link;
     
     private Observer observer;
 
-    public ReliableLink(Host me, Observer observer){
+    public DirectedReliableLink(Host me, Observer observer){
         this.me = me;
         this.link = new FairlossLink(me.getPort(), this);
         this.delivered = new HashSet<Message>();
-        this.toSend = Collections.synchronizedList(new ArrayList<Message>());
+        this.toSend = new HashMap<Host, List<Message>>();
+
+        for(Host h : Main.parser.hosts()) toSend.put(h, new ArrayList<Message>());
         this.observer = observer;
 
         Thread sender = new Thread(this);
@@ -40,12 +46,23 @@ public class ReliableLink extends Link implements Observer {
 
     // must synchronize to modify a synchronized
     public synchronized void send(Message m){
-        toSend.add(m);
+        toSend.get(m.destination()).add(m);
     }
     
     public synchronized void send(){
         // must synchronize to iterate over a shared list
-        toSend.forEach( m -> link.send(m));
+        toSend.values().forEach(ms -> batchSend(ms));
+    }
+
+    private void batchSend(List<Message> ms){
+        int head = 0;
+        while(head-ms.size() > 4){
+            link.send(ms.subList(head, head+BATCH_SIZE));
+            head+= BATCH_SIZE;
+        }
+        for(; head < ms.size(); head++){
+            link.send(ms.get(head));
+        }
     }
 
     public void receive(Message m){
@@ -66,39 +83,28 @@ public class ReliableLink extends Link implements Observer {
 
     public void run(){
         while(true){
+            send();
             try{
-                Thread.sleep(100);
+                Thread.sleep(SEND_PERIOD);
             }
             catch(Exception e){
                 System.out.println("error waiting sender thread in perfect link");
                 e.printStackTrace();
             }
-            send();
         }
     }
 
     private void ack(Message m){
-        link.send(new Message("ack " + m.content() , me, m.originalSender(), m.sender(), m.id()));
+        // construct ack message
+        Message ack = new Message("ack " + m.content() , me, m.originalSender(), m.sender(), m.id());
+        // add to tosend
+        toSend.get(m.sender()).add(ack);
     }
 
     private synchronized void removeAcked(Message m){
-
-        // TODO optimize
-
-        // find corresponding message
-        Message m2 = Message.DUMMY;
-        for(Message temp : toSend){
-            if( 
-                m.sender().getId() == temp.destination().getId() && // destination is sender
-                m.id() == temp.id() && // id is correct
-                ackContent(m).equals(temp.content())
-            )
-            {
-                m2 = temp;
-            }
-        }
-        // remove it from messages to send
-        toSend.remove(m2);
+        toSend.get(m.sender()).removeIf(
+            (Message pending) -> pending.id() == m.id() && pending.content().equals(ackContent(m))
+        );
     }
     
     private String ackContent(Message m){

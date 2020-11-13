@@ -10,11 +10,13 @@ package cs451.Links;
 import cs451.*;
 import java.io.IOException;
 import java.net.*;
+import java.util.List;
 
 public class FairlossLink extends Link{
 
-    private byte[] s_buf = new byte[4196];
-    private byte[] r_buf = new byte[4196];
+    private byte[] s_buf = new byte[4096];
+    private byte[] r_buf = new byte[4096];
+    private final byte BATCH_INDICATOR = -1;
 
     private DatagramSocket socket;
 
@@ -44,6 +46,27 @@ public class FairlossLink extends Link{
 
     }
 
+    @Override // override abstract class method
+    public void send(List<Message> ms){
+        s_buf[0] = BATCH_INDICATOR;
+        int h = 1;
+
+        for(Message m : ms){
+            System.arraycopy(Message.serialize(m), 0, s_buf, h, Message.MESSAGE_BYTES);
+            h += Message.MESSAGE_BYTES;
+        }
+        Host destination = ms.get(0).destination();
+        try{
+        InetAddress address = InetAddress.getByName(destination.getIp());
+        DatagramPacket packet = new DatagramPacket(s_buf, s_buf.length, address, destination.getPort());
+        socket.send(packet);
+        }
+        catch(Exception e){ 
+            System.out.println("flLink: error sending message " + ms.toString() + " to host " + destination.getId());
+        }
+
+    }
+
     public void deliver(){
 
         while(true){
@@ -51,15 +74,17 @@ public class FairlossLink extends Link{
             try{
             DatagramPacket r_p = new DatagramPacket(r_buf, r_buf.length);
             socket.receive(r_p);
-            Message m = Message.deserialize(r_buf);
-            observer.receive(m);
+            if(r_buf[0] == BATCH_INDICATOR){
+                List<Message> ms = Message.deserializeBatch(r_buf);
+                for(Message m : ms) observer.receive(m);
+            }
+            else{
+                Message m = Message.deserialize(r_buf);
+                observer.receive(m);
+            }
             }
             catch(IOException e){
                 System.out.println("FairLossLink: error receiving");
-                e.printStackTrace();
-            }
-            catch(ClassNotFoundException e){
-                System.out.println("FairLossLink: error deserializing");
                 e.printStackTrace();
             }
         }

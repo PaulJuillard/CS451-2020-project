@@ -13,20 +13,15 @@ package cs451.Links;
 
 import cs451.*;
 import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.PriorityQueue;
-import java.util.Comparator;
 
 public class ThreadedReliableLink extends Link implements Observer {
 
     private Host me;
     private HashSet<Message> delivered;
     private long INITIAL_TIMER = 20; // timer in ms before retransmission
-    private double TIMER_INCREASE_RATIO = 1;
+    private double TIMER_INCREASE_RATIO = 1.5;
 
     private Map<Host, HostSender> hostSenders = new HashMap<Host, HostSender>();
     //private Map<Host, List<Message>> toSend;

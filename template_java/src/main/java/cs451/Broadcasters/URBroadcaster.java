@@ -52,12 +52,14 @@ public class URBroadcaster extends Broadcaster{
         
         Pair<Integer, Integer> smPair = smPair(m);
 
-        if(delivered.contains(smPair)){ return;}
+        if(delivered.contains(smPair)){ return; }
         else {
 
             // add this sender to acked for this message
             // set prevents duplicates
-            ack.computeIfAbsent(smPair, empty -> new HashSet<>()).add(m.sender().getId());
+            
+            if(!ack.containsKey(smPair)) ack.put(smPair, new HashSet<>());
+            ack.get(smPair).add(m.sender().getId());
 
             // if this message is already known
             if( pending.contains(smPair) ){

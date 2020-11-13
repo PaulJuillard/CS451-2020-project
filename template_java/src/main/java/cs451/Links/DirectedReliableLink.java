@@ -17,7 +17,7 @@ import java.util.HashMap;
 public class DirectedReliableLink extends Link implements Observer {
 
     public static final int BATCH_SIZE = 4;
-    private static final int SEND_PERIOD = 100;
+    private static final int SEND_PERIOD = 50;
 
     private Host me;
     private HashSet<Message> delivered;
@@ -46,6 +46,7 @@ public class DirectedReliableLink extends Link implements Observer {
 
     // must synchronize to modify a synchronized
     public synchronized void send(Message m){
+        //System.out.print("+");
         toSend.get(m.destination()).add(m);
     }
     
@@ -96,14 +97,15 @@ public class DirectedReliableLink extends Link implements Observer {
 
     private void ack(Message m){
         // construct ack message
-        Message ack = new Message("ack " + m.content() , me, m.originalSender(), m.sender(), m.id());
+        Message ack = new Message("ack " + m.content(), me, m.originalSender(), m.sender(), m.id());
         // add to tosend
-        toSend.get(m.sender()).add(ack);
+        link.send(ack);
     }
 
-    private synchronized void removeAcked(Message m){
-        toSend.get(m.sender()).removeIf(
-            (Message pending) -> pending.id() == m.id() && pending.content().equals(ackContent(m))
+    private synchronized void removeAcked(Message ack){
+        List<Message> hpending = toSend.get(ack.sender());
+        hpending.removeIf(
+            (Message pending) -> pending.id() == ack.id() && pending.content().equals(ackContent(ack))
         );
     }
     

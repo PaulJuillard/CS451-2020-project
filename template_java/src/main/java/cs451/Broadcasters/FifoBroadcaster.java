@@ -13,7 +13,6 @@ import cs451.*;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.PriorityQueue;
-import java.util.Comparator;
 
 
 public class FifoBroadcaster extends Broadcaster {
@@ -57,20 +56,19 @@ public class FifoBroadcaster extends Broadcaster {
         // If this message is the one we are waiting for, we can start delivering
         if(next.get(m.originalSender().getId()) == m.id()){
             deliverPending(m.originalSender());
-            next.put(m.originalSender().getId(), m.id()+1);
         }
     }
 
     public void deliverPending(Host sender){
 
         PriorityQueue<Message> ms = pending.get(sender.getId());
-
-        for(int i = next.get(sender.getId());
-            ms.size() > 0 && i == ms.element().id();
-            i++){
+        int n = next.get(sender.getId());
+        for(; ms.size() > 0 && n == ms.element().id(); n++)
+        {
             Main.writeOutput(ms.element().content());
             ms.remove();
         }
+        next.put(sender.getId(), n);
     }
 
     public Host me(){ return me;}

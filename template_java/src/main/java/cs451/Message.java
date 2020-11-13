@@ -125,7 +125,7 @@ public class Message implements Serializable {
     public static List<Message> deserializeBatch(byte[] buf){
         int h = 1; // the first byte is batch indicator
         List<Message> ms = new ArrayList<Message>();
-        for(int i = 0; i < HostSender.BATCH_SIZE; i++){
+        for(int i = 0; i < DirectedReliableLink.BATCH_SIZE; i++){
             ms.add(deserialize(buf, h));
             h += MESSAGE_BYTES;
         }

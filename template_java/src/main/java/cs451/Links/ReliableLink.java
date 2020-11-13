@@ -58,10 +58,12 @@ public class ReliableLink extends Link implements Observer {
         else {
             // ack to dest with m's id
             ack(m);
-            if(!delivered.contains(m)) observer.receive(m);
+            if(!delivered.contains(m)){
+                observer.receive(m);
+                delivered.add(m);
+            }
         }
-
-        delivered.add(m);
+        
     }
 
     public void run(){

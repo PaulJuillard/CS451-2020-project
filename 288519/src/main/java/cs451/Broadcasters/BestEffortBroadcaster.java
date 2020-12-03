@@ -28,23 +28,30 @@ public class BestEffortBroadcaster extends Broadcaster {
             }
         }
 
-        //link = new ReliableLink(me, this);
+        link = new ReliableLink(me, this);
         //link = new ThreadedReliableLink(me, this);
-        link = new DirectedReliableLink(me, this);
+        //link = new DirectedReliableLink(me, this);
 
         this.observer = observer;
     }
 
     // broadcast with specified original sender, useful for relay message
-    public void broadcast(String content, Host oSender, int id){
+
+    /*
+    public void broadcast(Message m, Host oSender, int id){
+
         for(Host host : Main.parser.hosts()){
-            Message m = new Message(content, me, oSender, host, id);
-            link.send(m);
+            Message m = new Message(content, me.getId(), oSender, id);
+            link.send(m, host);
         }
     }
+    */
 
-    public void broadcast(String content){
-        broadcast(content, me(), Message.count);
+
+    public void broadcast(Message m){
+        Main.hosts.forEach( dest -> link.send(m, dest));
+        //broadcast(m, me(), Message.count);
+
         // lowest level of broadcaster must update count
         Message.count++;
     }

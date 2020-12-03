@@ -15,6 +15,6 @@ public abstract class Broadcaster implements Observer{
     abstract public Host me();
 
     abstract public void receive(Message m);
-    abstract public void broadcast(String content);
+    abstract public void broadcast(Message m);
 
 }

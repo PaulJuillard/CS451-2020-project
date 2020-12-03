@@ -38,29 +38,33 @@ public class ReliableBroadcaster extends Broadcaster {
         beb = new BestEffortBroadcaster(this);
     }
 
+    /*
     public void broadcast(String m, int id){
         beb.broadcast(m, me, id);
     }
+     */
 
-    public void broadcast(String m){
-        beb.broadcast(m, me, Message.count);
-        Message.count++;
+    public void broadcast(Message m){
+        //beb.broadcast(m, me, Message.count);
+        //Message.count++;
+        beb.broadcast(m);
     }
 
     public void relay(Message m){
-        for(Host host: Main.parser.hosts()){
-            Message m_prime = new Message(m.content(), m.sender(), host, m.id());
-            beb.link().send(m_prime);
-        }
+        /*for(Host host: Main.parser.hosts()){
+            Message m_prime = new Message(m.content(), m.sender(), m.id());
+            beb.link().send(m_prime, host);
+        }*/
+        beb.broadcast(m);
     }
 
     public void receive(Message m){
-        if( !from.get(m.sender().getId()).contains(m)){
+        if( !from.get(m.sender()).contains(m)){
 
             relay(m);
 
             // add to from list
-            from.get(m.sender().getId()).add(m);
+            from.get(m.sender()).add(m);
 
             // deliver
             Main.writeOutput(m.content());

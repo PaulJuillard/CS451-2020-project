@@ -1,14 +1,23 @@
 package cs451;
 
+import cs451.Messages.Message;
 import cs451.Parsers.*;
 import cs451.Broadcasters.*;
 import java.io.FileWriter;
 import java.lang.StringBuilder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Main {
 
     public static Parser parser;
     private static StringBuilder output = new StringBuilder();
+
+    public static List<Host> hosts;
+    public static Integer me;
+    public static Map<Integer, Host> hostByID = new HashMap<>();
+
 
     private static void handleSignal() {
         System.out.println("Immediately stopping network packet processing.");
@@ -44,15 +53,21 @@ public class Main {
         if (parser.hasConfig()) {
             nMessages = parser.config();
         }
+
+        hosts = parser.hosts();
+        hosts.forEach( h -> hostByID.put(h.getId(), h));
+        me = parser.myId();
         
         Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(), parser.signalIp(), parser.signalPort());
         
         coordinator.waitOnBarrier();
         
         Broadcaster broadcaster = new FifoBroadcaster();
-
+        System.out.println(broadcaster);
+        System.out.println(me);
+        
         for(int m = 1; m <= nMessages; m++){
-            broadcaster.broadcast("d " + broadcaster.me().getId() + " " + m);
+            broadcaster.broadcast( new Message("d " + me + " " + m, me));
             writeOutput("b " + m);
         }
         

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-
+// TODO concurrent modification line 58, line 95
 public class DirectedReliableLink extends Link implements Observer {
 
     public static final int BATCH_SIZE = 4;
@@ -24,19 +24,19 @@ public class DirectedReliableLink extends Link implements Observer {
     private Host me;
 
     private HashSet<Message> delivered;
-    private Map<Host, List<Message>> toSend;
+    private Map<Integer, List<Message>> toSend;
     
     private FairlossLink link;
     
     private Observer observer;
 
     public DirectedReliableLink(Host me, Observer observer){
-        this.me = me;
+        this.me = me; // TODO change this to integer everywhere
         this.link = new FairlossLink(me.getPort(), this);
         this.delivered = new HashSet<Message>();
-        this.toSend = new HashMap<Host, List<Message>>();
+        this.toSend = new HashMap<Integer, List<Message>>();
 
-        for(Host h : Main.parser.hosts()) toSend.put(h, new ArrayList<Message>());
+        for(Host h : Main.parser.hosts()) toSend.put(h.getId(), new ArrayList<Message>());
         this.observer = observer;
 
         Thread sender = new Thread(this);
@@ -47,30 +47,32 @@ public class DirectedReliableLink extends Link implements Observer {
     }
 
     // must synchronize to modify a shared list
-    public synchronized void send(Message m){
-        toSend.get(m.destination()).add(m);
+    public synchronized void send(Message m, Host destination){
+        toSend.get(destination.getId()).add(m);
     }
     
     // must synchronize to iterate over a shared list
     public synchronized void send(){
         // batch send for each host
-        toSend.values().forEach(ms -> batchSend(ms));
+        //toSend.values().forEach(ms -> batchSend(ms));
+        toSend.forEach( (Integer dest, List<Message> ms) -> ms.forEach( m -> send(m, Main.hostByID.get(dest)))); // TODO at this point this is the same as reliable link
     }
 
-    
+    /*
     private void batchSend(List<Message> ms){
         int head = 0;
         // send batched
-        /*while(head-ms.size() > 4){
+        while(head-ms.size() > 4){
             link.send(ms.subList(head, head+BATCH_SIZE));
             head+= BATCH_SIZE;
         }
-        */
+
         // send remaining
         for(; head < ms.size(); head++){
             link.send(ms.get(head));
         }
     }
+    */
 
     public void receive(Message m){
         
@@ -104,10 +106,10 @@ public class DirectedReliableLink extends Link implements Observer {
     private void ack(Message m){
         // construct ack message
         // swap sender and destination, keep original id to identify which message the ack refers to
-        Message ack = new Message("ack " + m.content(), me, m.originalSender(), m.sender(), m.id());
+        Message ack = new Message("ack " + m.content(), me.getId(), m.originalSender(), m.id());
         // dont add to to send because acks are not acked (and will thus not be removed from tosend)
         // instead send it directly
-        link.send(ack);
+        link.send(ack, Main.hostByID.get(m.sender()));
     }
 
     private synchronized void removeAcked(Message ack){

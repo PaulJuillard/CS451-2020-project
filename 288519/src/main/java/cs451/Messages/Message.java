@@ -28,33 +28,32 @@ public class Message implements Serializable {
     };
 
     public String content;
-    private Host sender;
-    private Host originalSender;
-    private Host destination;
+    private int sender;
+    private int originalSender;
     private int id;
 
-    public Message(String m, Host from, Host oFrom, Host to, int id){
+    public Message(String m, int from, int oFrom, int id){
         this.content = m;
         this.sender = from;
         this.originalSender = oFrom;
-        this.destination = to;
         this.id = id;
     }
     
-    public Message(String m, Host from, Host to, int id){
-        this(m, from, from, to, id);
+    public Message(String m, int from, int id){
+        this(m, from, from, id);
     }
 
-    public Message(String m, Host from, Host to){
-        this(m, from, from, to, count++);
+    public Message(String m, int from){
+        this(m, from, from, count++);
     }
 
     // getters
     public String content(){ return content; }
-    public Host sender() { return sender; }
-    public Host originalSender() { return originalSender; }
-    public Host destination() { return destination; }
-    public int id() { return id;}    
+    public Integer sender() { return sender; }
+    //public Host sender() { return Main.hostFromId(sender); }
+    public Integer originalSender() { return originalSender; }
+    //public Host originalSender() { return Main.hostFromId(originalSender); }
+    public int id() { return id;}
     
     //StackOverflow https://stackoverflow.com/questions/3736058/java-object-to-byte-and-byte-to-object-converter-for-tokyo-cabinet/3736091
     public byte[] serialize() throws IOException {
@@ -151,18 +150,17 @@ public class Message implements Serializable {
         else{
             Message m2 = (Message)o;
         return (
-            this.sender.getId() == m2.sender().getId() &&
+            this.sender == m2.sender() &&
             this.id == m2.id &&
             this.content.equals(m2.content()) &&
-            this.destination.getId() == m2.destination().getId() &&
-            this.originalSender.getId() == m2.originalSender.getId()
+            this.originalSender== m2.originalSender
             );
         }
     }
     
     @Override
     public int hashCode(){
-        return Objects.hash(content, sender, originalSender, destination, id);
+        return Objects.hash(content, sender, originalSender, id);
     }
 
 }

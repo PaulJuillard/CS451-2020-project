@@ -36,7 +36,7 @@ public class FairlossLink extends Link{
         this.observer = observer;
     }
 
-    public void send(Message m){
+    public void send(Message m, Host destination){
         // s_buf = Message.serialize(m); batch sending code
         try{
             s_buf = m.serialize();
@@ -44,7 +44,7 @@ public class FairlossLink extends Link{
             System.out.println("flLink: error serializing message");
             e.printStackTrace();
         }
-        send(m.destination());
+        send(destination);
     }
 
     /*
@@ -66,7 +66,7 @@ public class FairlossLink extends Link{
         
     }
     */
-
+    // TODO merge with public send
     private void send(Host destination){
         try{
             InetAddress address = InetAddress.getByName(destination.getIp());
@@ -77,6 +77,7 @@ public class FairlossLink extends Link{
             System.out.println("flLink: error sending message to host " + destination.getId());
         }
     }
+
 
     public void deliver(){
 

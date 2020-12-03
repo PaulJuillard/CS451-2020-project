@@ -45,7 +45,7 @@ public class URBroadcaster extends Broadcaster{
         observer = obs;
     }
 
-    public void broadcast(String m){
+    public void broadcast(Message m){
         beb.broadcast(m);
     }
 
@@ -58,7 +58,7 @@ public class URBroadcaster extends Broadcaster{
             // add this sender to acked for this message
             // set prevents duplicates
             if(!ack.containsKey(smPair)){ ack.put(smPair, new HashSet<>()); }
-            ack.get(smPair).add(m.sender().getId());
+            ack.get(smPair).add(m.sender());
 
             // if this message is already known
             if( pending.contains(smPair) ){
@@ -89,12 +89,13 @@ public class URBroadcaster extends Broadcaster{
     public Host me(){ return me; }
 
     private void relay(Message m){
-        beb.broadcast(m.content(), m.originalSender(), m.id());
+        //beb.broadcast(m.content(), m.originalSender(), m.id());
+        beb.broadcast(new Message(m.content(), Main.me, m.originalSender(), m.id()));
     }
 
     private Pair<Integer, Integer> smPair(Message m){
         // if the message is not a relay, then sender == originalSender
-        Integer sender = m.originalSender().getId();
+        Integer sender = m.originalSender();
         Integer mId = m.id();
 
         return new Pair<Integer, Integer>(sender, mId);

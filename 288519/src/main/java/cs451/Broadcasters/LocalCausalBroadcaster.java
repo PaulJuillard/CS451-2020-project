@@ -17,17 +17,18 @@ import java.util.HashMap;
 import java.util.PriorityQueue;
 
 
-public class FifoBroadcaster extends Broadcaster {
+public class LocalCausalBroadcaster extends Broadcaster {
 
     private URBroadcaster urb;
     private Host me;
+    private int[] clock;
 
     // Maps each host to its ordered pending message
     private Map<Integer, PriorityQueue<Message>> pending = new HashMap<Integer, PriorityQueue<Message>>();
     // Maps host id to next message to deliver by id
     private Map<Integer, Integer> next = new HashMap<Integer, Integer>();
 
-    public FifoBroadcaster(){
+    public LocalCausalBroadcaster(){
 
         // initialize data structures
         for (Host host: Main.parser.hosts()) {
@@ -39,13 +40,18 @@ public class FifoBroadcaster extends Broadcaster {
             }
         }
 
-        // fifo broadcaster uses urb
+        this.clock = new int[Main.parser.hosts().size()];
+
+        // uses urb
         urb = new URBroadcaster(this);
 
     }
 
 
     public void broadcast(Message m){
+        int[] w = clock;
+        w[me.getId()] = Message.count;
+        // TODO broadcast message instead of string
         urb.broadcast(m);
     }
 

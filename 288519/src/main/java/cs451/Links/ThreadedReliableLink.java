@@ -51,9 +51,9 @@ public class ThreadedReliableLink extends Link implements Observer {
     }
 
     // must synchronize to modify a synchronized
-    public void send(Message m){
+    public void send(Message m, Host destination){
         //toSend.add(m);
-        hostSenders.get(m.destination()).addToSend(m);
+        hostSenders.get(destination).addToSend(m);
     }
 
     public void receive(Message m){
@@ -80,7 +80,8 @@ public class ThreadedReliableLink extends Link implements Observer {
     }
 
     private void ack(Message m){
-        link.send(new Message("ack " + m.content() , me, m.originalSender(), m.sender(), m.id()));
+        Host sender = Main.hostByID.get(m.sender());
+        link.send(new Message("ack " + m.content() , me.getId(), m.originalSender(), m.id()),  sender);
     }
 
     private synchronized void removeAcked(Message ack){
@@ -89,7 +90,7 @@ public class ThreadedReliableLink extends Link implements Observer {
         HostSender hs = hostSenders.get(ack.sender());
 
         // create equivalent message
-        Message acked = new Message(ackContent(ack), me, ack.originalSender(), ack.sender(), ack.id());
+        Message acked = new Message(ackContent(ack), me.getId(), ack.originalSender(), ack.id());
         hs.stopSending(acked);
     }
     

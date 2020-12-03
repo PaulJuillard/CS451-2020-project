@@ -55,12 +55,14 @@ public class HostSender implements Runnable{
 
     public synchronized void send(){
         int head = 0;
+        /*
         while(head-toSend.size() > 4){
             link.send(toSend.subList(head, head+BATCH_SIZE));
             head+= BATCH_SIZE;
         }
+         */
         for(; head < toSend.size(); head++){
-            link.send(toSend.get(head));
+            link.send(toSend.get(head), h);
         }
     }
 

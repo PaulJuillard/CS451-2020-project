@@ -3,6 +3,7 @@ package cs451.Parsers;
 import cs451.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Parser {
 
@@ -108,7 +109,7 @@ public class Parser {
         return configParser.getN();
     }
 
-    public Map<Integer, List<Integer>> dependencies(){
+    public Map<Integer, Set<Integer>> dependencies(){
         return configParser.getDependencies();
     }
 

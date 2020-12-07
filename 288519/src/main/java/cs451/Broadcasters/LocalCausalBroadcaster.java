@@ -16,13 +16,18 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 
 
 public class LocalCausalBroadcaster extends Broadcaster {
 
     private URBroadcaster urb;
     private int[] clock;
-
+    private int[] sclock;
+    private Set<Integer> myDependencies;
     // Maps each host to its ordered pending message
 
     // TODO change this for more efficiency
@@ -41,15 +46,24 @@ public class LocalCausalBroadcaster extends Broadcaster {
             
         }
 
+        myDependencies = Main.dependencies.getOrDefault(Main.me, new HashSet<>());
+
         this.clock = new int[Main.hosts.size()];
+        //this.sclock = new int[Main.hosts.size()];
+        // TODO REMOVE
+        if(Main.me == 1){
+            this.sclock = {2, 0};
+        }
+        else{
+            this.sclock = new int[Main.hosts.size()];
+        }
 
         // uses urb
         urb = new URBroadcaster(this);
     }
 
-
     public void broadcast(Message m){
-        int[] w = clock.clone();
+        int[] w = sclock.clone();
         w[Main.me-1] = Message.count;
         m.setClock(w);
         urb.broadcast(m);
@@ -61,9 +75,8 @@ public class LocalCausalBroadcaster extends Broadcaster {
         if(clockBigger(m.clock())){
             // deliver this message
             deliver(m);
-            if(Main.me == 1){
-                System.out.println( "delivered");
-            }
+            System.out.println(Main.me.toString() + ":delivered");
+            
             // check if others can be delivered with new clock
             deliverPending();
         }
@@ -73,13 +86,19 @@ public class LocalCausalBroadcaster extends Broadcaster {
     }
 
     private synchronized void deliver(Message m){
-        if(Main.me == 1){
-            System.out.println( "delivering " + m.content() + " with clock " + Arrays.toString(m.clock()) + " ; mine is " + Arrays.toString(clock));
-        } 
+        // TODO REMOVE
+
+        
+        System.out.println(Main.me.toString() + ": delivering " + m.content() + " with clock " + Arrays.toString(m.clock()) + " ; mine is " + Arrays.toString(clock));
+        
+
         clock[m.originalSender()-1] += 1;
-        if(Main.me == 1){
-            System.out.println( "==> mine is " + Arrays.toString(clock));
-        } 
+        if(myDependencies.contains(m.originalSender())){ 
+            sclock[m.originalSender()-1] += 1;
+        }
+
+        System.out.println(Main.me.toString() + ": ==> mine is " + Arrays.toString(clock));
+         
         Main.writeOutput(m.content);
     }
 

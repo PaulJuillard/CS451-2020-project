@@ -8,6 +8,7 @@ import java.lang.StringBuilder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Main {
 
@@ -17,7 +18,7 @@ public class Main {
     public static List<Host> hosts;
     public static Integer me;
     public static Map<Integer, Host> hostByID = new HashMap<>();
-    public static Map<Integer, List<Integer>> dependencies = new HashMap<>();
+    public static Map<Integer, Set<Integer>> dependencies = new HashMap<>();
 
 
     private static void handleSignal() {
@@ -57,9 +58,6 @@ public class Main {
             System.out.println(dependencies);
         }
 
-        Thread.sleep(1000);
-        System.exit(0);
-        
         hosts = parser.hosts();
         hosts.forEach( h -> hostByID.put(h.getId(), h));
         me = parser.myId();

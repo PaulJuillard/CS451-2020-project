@@ -13,22 +13,13 @@ import cs451.Messages.*;
 
 public class BestEffortBroadcaster extends Broadcaster {
 
-    private Host me;
     private Link link;
 
     private Observer observer;
 
-    public BestEffortBroadcaster(Observer observer){        
+    public BestEffortBroadcaster(Observer observer){
 
-        me = new Host();
-
-        for (Host host: Main.parser.hosts()) {
-            if(host.getId() == Main.parser.myId()){
-                me = host;
-            }
-        }
-
-        link = new ReliableLink(me, this);
+        link = new ReliableLink(Main.hostFromId(Main.me), this);
         //link = new ThreadedReliableLink(me, this);
         //link = new DirectedReliableLink(me, this);
 
@@ -61,6 +52,5 @@ public class BestEffortBroadcaster extends Broadcaster {
     }
 
     public Link link(){ return link;}
-    public Host me(){ return me;}
         
 }

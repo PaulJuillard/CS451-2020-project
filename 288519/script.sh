@@ -14,7 +14,7 @@ do
         ;;
         n)
         echo "sending $OPTARG messages" >&2
-        echo $OPTARG > config
+        #echo $OPTARG > config
         ;;
         b) 
         ./build.sh

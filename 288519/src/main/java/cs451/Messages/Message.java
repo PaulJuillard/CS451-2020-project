@@ -7,11 +7,9 @@ Date: 11.10.20
 package cs451.Messages;
 import cs451.*;
 import java.io.*;
-import java.util.Objects;
-import java.util.Comparator;
+import java.util.*;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.ArrayList;
+
 import cs451.Links.*;
 
 public class Message implements Serializable {
@@ -31,12 +29,19 @@ public class Message implements Serializable {
     private int sender;
     private int originalSender;
     private int id;
+    private int[] clock;
 
-    public Message(String m, int from, int oFrom, int id){
+    public Message(String m, int from, int oFrom, int id, int[] clock){
         this.content = m;
         this.sender = from;
         this.originalSender = oFrom;
         this.id = id;
+        this.clock = clock;
+
+    }
+
+    public Message(String m, int from, int oFrom, int id){
+        this(m, from, oFrom, id, null);
     }
     
     public Message(String m, int from, int id){
@@ -44,8 +49,9 @@ public class Message implements Serializable {
     }
 
     public Message(String m, int from){
-        this(m, from, from, count++);
-    }
+        //this(m, from, from, count++);
+        this(m, from, from, count);
+    } // TODO not clear to keep a count++ here
 
     // getters
     public String content(){ return content; }
@@ -54,6 +60,8 @@ public class Message implements Serializable {
     public Integer originalSender() { return originalSender; }
     //public Host originalSender() { return Main.hostFromId(originalSender); }
     public int id() { return id;}
+    public int[] clock() {return clock;}
+    public void setClock(int[] clock){ this.clock = clock;}
     
     //StackOverflow https://stackoverflow.com/questions/3736058/java-object-to-byte-and-byte-to-object-converter-for-tokyo-cabinet/3736091
     public byte[] serialize() throws IOException {
@@ -153,7 +161,8 @@ public class Message implements Serializable {
             this.sender == m2.sender() &&
             this.id == m2.id &&
             this.content.equals(m2.content()) &&
-            this.originalSender== m2.originalSender
+            this.originalSender== m2.originalSender &&
+            Arrays.equals(this.clock, m2.clock)
             );
         }
     }

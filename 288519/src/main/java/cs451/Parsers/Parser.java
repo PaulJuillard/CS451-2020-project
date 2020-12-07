@@ -2,6 +2,7 @@ package cs451.Parsers;
 
 import cs451.*;
 import java.util.List;
+import java.util.Map;
 
 public class Parser {
 
@@ -60,7 +61,8 @@ public class Parser {
         if (argsNum == Constants.ARG_LIMIT_CONFIG) {
             configParser = new ConfigParser();
             if (!configParser.populate(args[Constants.CONFIG_VALUE])) {
-                // TODO 
+                help();
+                // TODO error message saying config is invalid
             }
         }
     }
@@ -104,6 +106,10 @@ public class Parser {
 
     public int config() {
         return configParser.getN();
+    }
+
+    public Map<Integer, List<Integer>> dependencies(){
+        return configParser.getDependencies();
     }
 
 }

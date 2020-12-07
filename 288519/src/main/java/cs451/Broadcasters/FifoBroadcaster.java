@@ -20,7 +20,6 @@ import java.util.PriorityQueue;
 public class FifoBroadcaster extends Broadcaster {
 
     private URBroadcaster urb;
-    private Host me;
 
     // Maps each host to its ordered pending message
     private Map<Integer, PriorityQueue<Message>> pending = new HashMap<Integer, PriorityQueue<Message>>();
@@ -34,9 +33,7 @@ public class FifoBroadcaster extends Broadcaster {
             
             next.put(host.getId(), 0);
             pending.put(host.getId(), new PriorityQueue<Message>(10, Message.MessageIdComparator));
-            if(host.getId() == Main.parser.myId()){
-                me = host;
-            }
+            
         }
 
         // fifo broadcaster uses urb
@@ -73,5 +70,4 @@ public class FifoBroadcaster extends Broadcaster {
         next.put(sender, n);
     }
 
-    public Host me(){ return me;}
 }

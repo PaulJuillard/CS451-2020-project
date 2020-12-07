@@ -17,6 +17,7 @@ public class Main {
     public static List<Host> hosts;
     public static Integer me;
     public static Map<Integer, Host> hostByID = new HashMap<>();
+    public static Map<Integer, List<Integer>> dependencies = new HashMap<>();
 
 
     private static void handleSignal() {
@@ -52,8 +53,13 @@ public class Main {
         int nMessages = 1;
         if (parser.hasConfig()) {
             nMessages = parser.config();
+            dependencies = parser.dependencies();
+            System.out.println(dependencies);
         }
 
+        Thread.sleep(1000);
+        System.exit(0);
+        
         hosts = parser.hosts();
         hosts.forEach( h -> hostByID.put(h.getId(), h));
         me = parser.myId();
@@ -62,9 +68,7 @@ public class Main {
         
         coordinator.waitOnBarrier();
         
-        Broadcaster broadcaster = new FifoBroadcaster();
-        System.out.println(broadcaster);
-        System.out.println(me);
+        Broadcaster broadcaster = new LocalCausalBroadcaster();
         
         for(int m = 1; m <= nMessages; m++){
             broadcaster.broadcast( new Message("d " + me + " " + m, me));
@@ -82,7 +86,6 @@ public class Main {
 
     synchronized public static void writeOutput(String content){
         output.append(content + "\n");
-        
     }
 
     public static Host hostFromId(int id){

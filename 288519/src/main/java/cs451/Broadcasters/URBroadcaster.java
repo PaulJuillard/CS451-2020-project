@@ -20,7 +20,6 @@ import java.lang.Integer;
 
 public class URBroadcaster extends Broadcaster{
     
-    private Host me;
     private Observer observer;
     private BestEffortBroadcaster beb;
     private double canDeliverThresh;
@@ -36,8 +35,6 @@ public class URBroadcaster extends Broadcaster{
     
     public URBroadcaster(Observer obs){
         
-        me = Main.hostFromId(Main.parser.myId());
-
         canDeliverThresh = Main.parser.hosts().size() / 2.0;
 
         beb = new BestEffortBroadcaster(this);
@@ -86,11 +83,9 @@ public class URBroadcaster extends Broadcaster{
         
     }
 
-    public Host me(){ return me; }
-
     private void relay(Message m){
         //beb.broadcast(m.content(), m.originalSender(), m.id());
-        beb.broadcast(new Message(m.content(), Main.me, m.originalSender(), m.id()));
+        beb.broadcast(new Message(m.content(), Main.me, m.originalSender(), m.id(), m.clock()));
     }
 
     private Pair<Integer, Integer> smPair(Message m){

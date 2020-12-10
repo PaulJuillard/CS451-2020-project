@@ -15,7 +15,10 @@ import cs451.Links.*;
 public class Message implements Serializable {
 
     public static int count = 0;
-    public static final int MESSAGE_BYTES = 256;
+    // (clock size + sender/osender/id size) * bytes + string bytes
+    public static final int CONTENT_BYTES = 50;
+    public static final int MESSAGE_BYTES = (Main.hosts.size() + 3 ) * Integer.BYTES * 3 + CONTENT_BYTES;
+
 
     // A comparator to order messages based on sequence number
     public static final Comparator<Message> MessageIdComparator= new Comparator<Message>() {
@@ -41,28 +44,22 @@ public class Message implements Serializable {
     }
 
     public Message(String m, int from, int oFrom, int id){
-        this(m, from, oFrom, id, null);
+        this(m, from, oFrom, id, new int[Main.hosts.size()]);
     }
     
     public Message(String m, int from, int id){
         this(m, from, from, id);
     }
 
-    public Message(String m, int from){
-        //this(m, from, from, count++);
-        this(m, from, from, count);
-    } // TODO not clear to keep a count++ here
-
     // getters
     public String content(){ return content; }
     public Integer sender() { return sender; }
-    //public Host sender() { return Main.hostFromId(sender); }
     public Integer originalSender() { return originalSender; }
-    //public Host originalSender() { return Main.hostFromId(originalSender); }
     public int id() { return id;}
     public int[] clock() {return clock;}
     public void setClock(int[] clock){ this.clock = clock;}
-    
+
+    /*
     //StackOverflow https://stackoverflow.com/questions/3736058/java-object-to-byte-and-byte-to-object-converter-for-tokyo-cabinet/3736091
     public byte[] serialize() throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -78,55 +75,73 @@ public class Message implements Serializable {
             return (Message)is.readObject();
         }
     }
+    */
 
     // Batch and 'a la mano' serializing
-    /*
+
+    private static byte[] clockToByte(int[] clock){
+        byte[] r = new byte[clock.length * Integer.BYTES];
+
+        for (int i = 0; i < clock.length; i++) {
+            System.arraycopy(toByteArray(clock[i]), 0, r, i * Integer.BYTES, Integer.BYTES);
+        }
+
+        return r;
+    }
+
     public static byte[] serialize(Message m){
         
         byte[] mbytes = new byte[MESSAGE_BYTES];
-        byte[] s = toByteArray(m.sender().getId());
-        byte[] os = toByteArray(m.originalSender().getId());
+        byte[] s = toByteArray(m.sender());
+        byte[] os = toByteArray(m.originalSender());
         byte[] id_ = toByteArray(m.id());
-        byte[] d = toByteArray(m.destination().getId());
-        byte[] c = m.content().getBytes();
+        byte[] cl = clockToByte(m.clock());
+        byte[] c = m.content().getBytes(StandardCharsets.UTF_8);
 
         int h = 0;
         System.arraycopy(s, 0, mbytes, h, s.length);
         h += s.length;
         System.arraycopy(os, 0, mbytes, h, os.length);
         h += os.length;
-        System.arraycopy(d, 0, mbytes, h, d.length);
-        h += d.length;
         System.arraycopy(id_, 0, mbytes, h, id_.length);
         h += id_.length;
+        System.arraycopy(cl, 0, mbytes, h, cl.length);
+        h += cl.length;
         System.arraycopy(c, 0, mbytes, h, c.length);
+
         return mbytes;
     }
 
     public static Message deserialize(byte[] m, int from){
 
         int h = from;
-        Host s = Main.hostFromId(fromByteArray(m, h));
+
+        Integer s = fromByteArray(m, h);
         h += Integer.BYTES;
-        Host os = Main.hostFromId(fromByteArray(m, h));
-        h += Integer.BYTES;
-        Host d = Main.hostFromId(fromByteArray(m, h));
+        Integer os = fromByteArray(m, h);
         h += Integer.BYTES;
         int id_ = fromByteArray(m, h);
         h += Integer.BYTES;
-        String c = new String(m, h, m.length-h, StandardCharsets.UTF_8).trim();
-        return new Message(c, s, os, d, id_ );
+
+        int[] cl = new int[Main.hosts.size()];
+        for (int i = 0; i < cl.length; i++) {
+            cl[i] = fromByteArray(m, h);
+            h += Integer.BYTES;
+        }
+
+        String c = new String(m, h, CONTENT_BYTES, StandardCharsets.UTF_8).trim();
+
+        return new Message(c, s, os, id_, cl);
     }
 
     public static Message deserialize(byte[] m){
         return deserialize(m, 0);
     }
 
-
-    public static List<Message> deserializeBatch(byte[] buf, int n){
+    public static List<Message> deserializeBatch(byte[] buf){
         int h = 1; // the first byte is batch indicator
-        List<Message> ms = new ArrayList<Message>(n);
-        for(int i = 0; i < n; i++){
+        List<Message> ms = new ArrayList<Message>();
+        for(int i = 0; i < ReliableLink.BUFSIZE; i++){
             ms.add(deserialize(buf, h));
             h += MESSAGE_BYTES;
         }
@@ -147,7 +162,7 @@ public class Message implements Serializable {
     public static int fromByteArray(byte[] bytes, int from) {
         return bytes[from] << 24 | (bytes[from+1] & 0xFF) << 16 | (bytes[from+2] & 0xFF) << 8 | (bytes[from+3] & 0xFF);
     }
-    */
+
 
     // redefine equals and hashcode for structural comparison
     @Override
@@ -161,8 +176,9 @@ public class Message implements Serializable {
             this.sender == m2.sender() &&
             this.id == m2.id &&
             this.content.equals(m2.content()) &&
-            this.originalSender== m2.originalSender &&
-            Arrays.equals(this.clock, m2.clock)
+            this.originalSender== m2.originalSender
+                    //&&
+            //Arrays.equals(this.clock, m2.clock)
             );
         }
     }

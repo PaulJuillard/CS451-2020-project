@@ -15,13 +15,10 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-// TODO concurrent modification line 58, line 95
 public class DirectedReliableLink extends Link implements Observer {
 
     public static final int BATCH_SIZE = 4;
     private static final int SEND_PERIOD = 50;
-
-    private Host me;
 
     private HashSet<Message> delivered;
     private Map<Integer, List<Message>> toSend;
@@ -30,9 +27,8 @@ public class DirectedReliableLink extends Link implements Observer {
     
     private Observer observer;
 
-    public DirectedReliableLink(Host me, Observer observer){
-        this.me = me; // TODO change this to integer everywhere
-        this.link = new FairlossLink(me.getPort(), this);
+    public DirectedReliableLink(Observer observer){
+        this.link = new FairlossLink(this);
         this.delivered = new HashSet<Message>();
         this.toSend = new HashMap<Integer, List<Message>>();
 
@@ -55,7 +51,7 @@ public class DirectedReliableLink extends Link implements Observer {
     public synchronized void send(){
         // batch send for each host
         //toSend.values().forEach(ms -> batchSend(ms));
-        toSend.forEach( (Integer dest, List<Message> ms) -> ms.forEach( m -> send(m, Main.hostByID.get(dest)))); // TODO at this point this is the same as reliable link
+        toSend.forEach( (Integer dest, List<Message> ms) -> ms.forEach( m -> send(m, Main.hostByID.get(dest))));
     }
 
     /*
@@ -106,7 +102,7 @@ public class DirectedReliableLink extends Link implements Observer {
     private void ack(Message m){
         // construct ack message
         // swap sender and destination, keep original id to identify which message the ack refers to
-        Message ack = new Message("ack " + m.content(), me.getId(), m.originalSender(), m.id());
+        Message ack = new Message("ack " + m.content(), Main.me, m.originalSender(), m.id());
         // dont add to to send because acks are not acked (and will thus not be removed from tosend)
         // instead send it directly
         link.send(ack, Main.hostByID.get(m.sender()));

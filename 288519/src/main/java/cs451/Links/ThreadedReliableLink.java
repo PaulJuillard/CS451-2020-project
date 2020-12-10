@@ -3,8 +3,6 @@ Implementation of Reliable links making use of HostSender Threads
 Each thread is a one to one sender by host
 This link receives for all hosts and acts as master for the pool of threads.
 
-TODO optimize with thread pools instead of lists of runnable
-
 Unfortunately does not improve performance as it is.
 Hyperparameters are INITIAL_TIMER and TIMER_INCREASE_RATIO
 
@@ -34,13 +32,13 @@ public class ThreadedReliableLink extends Link implements Observer {
 
     public ThreadedReliableLink(Host me, Observer observer){
         this.me = me;
-        this.link = new FairlossLink(me.getPort(), this);
+        this.link = new FairlossLink(this);
         this.delivered = new HashSet<Message>();
 
         this.observer = observer;
 
         for(Host h : Main.parser.hosts()){
-            hostSenders.put(h, new HostSender(h, INITIAL_TIMER, TIMER_INCREASE_RATIO, link)); 
+            //hostSenders.put(h, new HostSender(h, INITIAL_TIMER, TIMER_INCREASE_RATIO, link));
         }
 
         Thread sender = new Thread(this);

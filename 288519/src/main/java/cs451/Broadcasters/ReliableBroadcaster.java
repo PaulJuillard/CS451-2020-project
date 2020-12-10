@@ -45,8 +45,6 @@ public class ReliableBroadcaster extends Broadcaster {
      */
 
     public void broadcast(Message m){
-        //beb.broadcast(m, me, Message.count);
-        //Message.count++;
         beb.broadcast(m);
     }
 

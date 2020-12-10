@@ -14,90 +14,81 @@ import java.net.*;
 import java.util.List;
 
 public class FairlossLink extends Link{
-    
-    //private final byte BATCH_INDICATOR = -1;
 
-    private byte[] s_buf = new byte[4096];
-    private byte[] r_buf = new byte[4096];
+    public static final int RBUF_SIZE = 1 + ReliableLink.BUFSIZE * Message.MESSAGE_BYTES;
+    private final byte BATCH_INDICATOR = -1;
+
+    private byte[] r_buf = new byte[RBUF_SIZE];
+
     private DatagramSocket socket;
-
 
     private Observer observer;
 
 
-    public FairlossLink(int myPort, Observer observer){
+    public FairlossLink(Observer observer){
+        int myport = Main.hme.getPort();
         try{
-            this.socket = new DatagramSocket(myPort);
+            this.socket = new DatagramSocket(myport);
         }
         catch(Exception e){ 
-            System.out.println("flLink: error initializing socket");
+            System.out.println("flLink: error initializing socket" + myport);
+            e.printStackTrace();
         }
 
         this.observer = observer;
     }
 
     public void send(Message m, Host destination){
-        // s_buf = Message.serialize(m); batch sending code
-        try{
-            s_buf = m.serialize();
-        } catch (IOException e) {
-            System.out.println("flLink: error serializing message");
-            e.printStackTrace();
-        }
-        send(destination);
+        send(Message.serialize(m), destination);
     }
 
-    /*
     @Override // override abstract class method
-    public void send(List<Message> ms){
-        s_buf[0] = BATCH_INDICATOR;
+    public void send(List<Message> ms, Host dest){
+
+        byte[] sendbuf = new byte[Message.MESSAGE_BYTES * ms.size() + 1];
+        sendbuf[0] = BATCH_INDICATOR;
+
         int head = 1; // account for the batch indicator byte
 
         // serialize each message into the buffer
         // System copy will fail if there is too many messages to serialize
         for(Message m : ms){
-            System.arraycopy(Message.serialize(m), 0, s_buf, head, Message.MESSAGE_BYTES);
+            System.arraycopy(Message.serialize(m), 0, sendbuf, head, Message.MESSAGE_BYTES);
             head += Message.MESSAGE_BYTES;
         }
 
-        Host destination = ms.get(0).destination();
-
-        send(destination);
+        send(sendbuf, dest);
         
     }
-    */
-    // TODO merge with public send
-    private void send(Host destination){
+
+    private void send(byte[] buf, Host destination){
         try{
             InetAddress address = InetAddress.getByName(destination.getIp());
-            DatagramPacket packet = new DatagramPacket(s_buf, s_buf.length, address, destination.getPort());
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, destination.getPort());
             socket.send(packet);
         }
-        catch(Exception e){ 
+        catch(Exception e){
             System.out.println("flLink: error sending message to host " + destination.getId());
         }
     }
 
-
     public void deliver(){
 
         while(true){
+            try {
+                DatagramPacket r_p = new DatagramPacket(r_buf, r_buf.length);
+                socket.receive(r_p);
 
-            try{
-            DatagramPacket r_p = new DatagramPacket(r_buf, r_buf.length);
-            socket.receive(r_p);
-            /*
-            if(r_buf[0] == BATCH_INDICATOR){
-                List<Message> ms = Message.deserializeBatch(r_buf, DirectedReliableLink.BATCH_SIZE);
-                for(Message m : ms){
+                if (r_buf[0] == BATCH_INDICATOR) {
+                    List<Message> ms = Message.deserializeBatch(r_buf);
+                    for (Message m : ms) {
+                        observer.receive(m);
+                    }
+                }
+                else {
+                    Message m = Message.deserialize(r_buf);
                     observer.receive(m);
                 }
-            }
-            else{
-            }
-                */
-                Message m = Message.deserialize(r_buf);
-                observer.receive(m);
             }
             catch(Exception e){
                 System.out.println("FairLossLink: error receiving");

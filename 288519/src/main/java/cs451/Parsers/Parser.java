@@ -63,7 +63,7 @@ public class Parser {
             configParser = new ConfigParser();
             if (!configParser.populate(args[Constants.CONFIG_VALUE])) {
                 help();
-                // TODO error message saying config is invalid
+                System.out.println("!!! Config file is invalid !!!");
             }
         }
     }
@@ -105,7 +105,7 @@ public class Parser {
         return configParser != null;
     }
 
-    public int config() {
+    public int nMessages() {
         return configParser.getN();
     }
 

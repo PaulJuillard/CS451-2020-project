@@ -1,0 +1,1 @@
+./barrier.py --port 11000 --processes 3

@@ -16,12 +16,10 @@ abstract public class Link implements Runnable {
 
     abstract public void send(Message m, Host destination);
 
-    /*
-    public void send(List<Message> ms ){
 
-        for(Message m : ms) send(m);
+    public void send(List<Message> ms, Host destination){
+        for(Message m : ms) send(m, destination);
     }
-    */
 
     abstract public void run(); // listen
     

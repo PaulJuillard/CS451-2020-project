@@ -21,6 +21,7 @@ import java.lang.Integer;
 public class URBroadcaster extends Broadcaster{
     
     private Observer observer;
+    //public Host me;
     private BestEffortBroadcaster beb;
     private double canDeliverThresh;
 
@@ -34,7 +35,6 @@ public class URBroadcaster extends Broadcaster{
     // TODO rename smPair
     
     public URBroadcaster(Observer obs){
-        
         canDeliverThresh = Main.parser.hosts().size() / 2.0;
 
         beb = new BestEffortBroadcaster(this);
@@ -84,7 +84,6 @@ public class URBroadcaster extends Broadcaster{
     }
 
     private void relay(Message m){
-        //beb.broadcast(m.content(), m.originalSender(), m.id());
         beb.broadcast(new Message(m.content(), Main.me, m.originalSender(), m.id(), m.clock()));
     }
 

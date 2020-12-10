@@ -21,20 +21,22 @@ public class HostSender implements Runnable{
     public static final int BATCH_SIZE = 4;
     
     private Host h;
-    private List<Message> toSend; // TODO change to priority queue
+    private List<Message> toSend; // change this to priority queue
     private long initialTimer;
     private long timer;
     private double increaseRatio;
     private Link link;
 
 
-    public HostSender(Host h, long initial_t, double increaseRatio, Link link){
+    public HostSender(Host h, long initial_t, double increaseRatio, Link link) throws Exception {
         this.h = h;
         this.initialTimer = initial_t;
         this.timer = initial_t;
         this.increaseRatio = increaseRatio;
         this.toSend = new ArrayList<Message>();
         this.link = link;
+
+        throw new Exception("Unimplemented Error");
         
     }
 
@@ -45,7 +47,6 @@ public class HostSender implements Runnable{
                 Thread.sleep(timer);
             }
             catch(InterruptedException e){
-                // TODO handle
                 System.out.println("interrupted thread");
                 e.printStackTrace();
             }

@@ -16,10 +16,11 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 
 public class LocalCausalBroadcaster extends Broadcaster {
@@ -28,35 +29,26 @@ public class LocalCausalBroadcaster extends Broadcaster {
     private int[] clock;
     private int[] sclock;
     private Set<Integer> myDependencies;
-    // Maps each host to its ordered pending message
+
+    private int count = 0;
+
+    private int nReceived;
 
     // TODO change this for more efficiency
+    // Maps each host to its ordered pending message
     private Map<Integer, PriorityQueue<Message>> pending = new HashMap<Integer, PriorityQueue<Message>>();
-    // Maps host id to next message to deliver by id
-    //private Map<Integer, Integer> next = new HashMap<Integer, Integer>();
 
     public LocalCausalBroadcaster(){
 
         // initialize data structures
         for (Host host: Main.hosts) {
-            
-            //next.put(host.getId(), 0);
             pending.put(host.getId(), new PriorityQueue<Message>(10, Message.MessageIdComparator));
-            //pending.put(host.getId(), new ArrayList<Message>());
-            
         }
 
         myDependencies = Main.dependencies.getOrDefault(Main.me, new HashSet<>());
 
         this.clock = new int[Main.hosts.size()];
-        //this.sclock = new int[Main.hosts.size()];
-        // TODO REMOVE
-        if(Main.me == 1){
-            this.sclock = {2, 0};
-        }
-        else{
-            this.sclock = new int[Main.hosts.size()];
-        }
+        this.sclock = new int[Main.hosts.size()];
 
         // uses urb
         urb = new URBroadcaster(this);
@@ -64,62 +56,91 @@ public class LocalCausalBroadcaster extends Broadcaster {
 
     public void broadcast(Message m){
         int[] w = sclock.clone();
-        w[Main.me-1] = Message.count;
+        w[Main.me-1] = count++;
         m.setClock(w);
         urb.broadcast(m);
     }
 
     public void receive(Message m){
 
-        
         if(clockBigger(m.clock())){
             // deliver this message
             deliver(m);
-            System.out.println(Main.me.toString() + ":delivered");
-            
+
             // check if others can be delivered with new clock
             deliverPending();
         }
         else {
             pending.get(m.originalSender()).add(m);
         }
+
+        if( allReceived()){
+            try {
+                Thread.sleep(60 * 60 * 1000);
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+        }
     }
 
-    private synchronized void deliver(Message m){
-        // TODO REMOVE
+    private boolean allReceived() {
+        if(nReceived == Main.nMessages * Main.hosts.size()){
+            System.out.println(" Finished! ");
+            return true;
+        }
+        return false;
+    }
 
-        
-        System.out.println(Main.me.toString() + ": delivering " + m.content() + " with clock " + Arrays.toString(m.clock()) + " ; mine is " + Arrays.toString(clock));
-        
+    private void deliver(Message m){
+
+        nReceived++;
+        if(nReceived % 100 == 0) System.out.println(nReceived);
 
         clock[m.originalSender()-1] += 1;
         if(myDependencies.contains(m.originalSender())){ 
             sclock[m.originalSender()-1] += 1;
         }
 
-        System.out.println(Main.me.toString() + ": ==> mine is " + Arrays.toString(clock));
-         
         Main.writeOutput(m.content);
     }
 
     public void deliverPending(){        
+        boolean again = false;
 
         for(PriorityQueue<Message> ms : pending.values()){
-            ms.removeIf( m -> 
-                {
-                    if(clockBigger(m.clock())){
-                        deliver(m);
-                        return true;
-                    } 
-                    else{ 
-                        return false; 
-                    }
+            
+            Iterator<Message> it = ms.iterator();
+            List<Message> toDeliver = new ArrayList<>(); 
+            boolean candeliver = true;
+            while( it.hasNext() && candeliver ){
+                Message m = it.next();
+                if(clockBigger(m.clock())){
+                    toDeliver.add(m);
+                    candeliver = true;
+                    again = true;
                 }
-            );
+                else{
+                    candeliver = false;
+                }
+                // TODO deliver next if possible?
+            }
+            for(Message m : toDeliver){
+                deliver(m);
+                ms.remove(m);
+            }
+            /*
+            if(d != null) {
+                deliver(d);
+                ms.remove(d);
+                again = true;
+            }
+            */
         }
-    }
-    private boolean clockBigger(int[] then){
 
+        if(again) deliverPending();
+    }
+
+    private boolean clockBigger(int[] then){
         boolean smaller = true;
         for(int i = 0; i < then.length; i++){
             smaller &= then[i] <= clock[i]; 

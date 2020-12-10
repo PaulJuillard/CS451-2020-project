@@ -12,30 +12,38 @@ import cs451.Messages.*;
 import cs451.Observer;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReliableLink extends Link implements Observer {
 
-    private Host me;
-    private HashSet<Message> delivered;
+    public int MAXSEND = (int) 3000 / Main.hosts.size(); // compute based on number of hosts
+    public static int BUFSIZE = 8;
 
-    private Map<Integer, List<Message>> toSend;
-    
+    private HashSet<Message> delivered;
+    private Map<Integer, PriorityQueue<Message>> toSend;
+    private HashSet<Pair<Integer, Pair<Integer, Integer>>> acked; // (dest, (original sender, id))
+
+    private HashMap<Integer, List<Message>> sendBuffer;
+
     private FairlossLink link;
-    
     private Observer observer;
 
-    public ReliableLink(Host me, Observer observer){
-        this.me = me;
-        this.link = new FairlossLink(me.getPort(), this);
+    public ReliableLink(Observer observer){
+        this.link = new FairlossLink(this);
         this.delivered = new HashSet<Message>();
         this.toSend = new HashMap<>();
+        this.sendBuffer = new HashMap<>();
         for (Host h : Main.parser.hosts()){
-            toSend.put(h.getId(), new ArrayList<Message>()); // TODO change arraylist to priority queue
+            toSend.put(h.getId(), new PriorityQueue<>(Message.MessageIdComparator));
+            sendBuffer.put(h.getId(), new ArrayList<Message>());
         }
         this.observer = observer;
 
         Thread sender = new Thread(this);
         Thread listen = new Thread(link);
+        acked = new HashSet<>();
+
+        for(; Message.MESSAGE_BYTES * BUFSIZE > FairlossLink.RBUF_SIZE; BUFSIZE /= 2);
 
         listen.start();
         sender.start();
@@ -43,30 +51,46 @@ public class ReliableLink extends Link implements Observer {
 
     // must synchronize to modify a synchronized
     public synchronized void send(Message m, Host destination){
-
         toSend.get(destination.getId()).add(m);
-
     }
     
     public synchronized void send(){
         // must synchronize to iterate over a shared list
-        //toSend.forEach( m -> link.send(m));
-        toSend.forEach( (Integer dest, List<Message> ms) -> ms.forEach( m -> link.send(m, Main.hostByID.get(dest))));
+        toSend.forEach( (Integer dest, PriorityQueue<Message> ms) ->
+                {
+                    AtomicInteger i = new AtomicInteger();
+
+                    ms.removeIf((m) -> {
+
+                        if ( i.addAndGet(1) > MAXSEND) return false;
+
+                        Pair<Integer, Pair<Integer, Integer>> p = new Pair<>(dest, new Pair<>(m.originalSender(), m.id()));
+
+                        if (acked.contains(p)) {
+                            acked.remove(p);
+                            return true;
+                        } else {
+                            bufferedSend(m, dest);
+                            return false;
+                        }
+                    });
+                    clearBuffer(dest);
+                });
     }
 
     public void receive(Message m){
-        
-        if(isAck(m)){
+
+        if(isAck(m)){ // O
             // this is a synchronized function
             removeAcked(m);                    
             // nothing to deliver from an ack
         }
         else {
             // ack to dest with m's id
-            ack(m);
-            if(!delivered.contains(m)){
-                observer.receive(m);
-                delivered.add(m);
+            ack(m); // O(1)
+            if(!delivered.contains(m)){ //O(1)
+                observer.receive(m); //O(1)
+                delivered.add(m); // O(1)
             }
         }
         
@@ -85,36 +109,32 @@ public class ReliableLink extends Link implements Observer {
         }
     }
 
+    private void bufferedSend(Message m, Integer dest){
+        List<Message> L = sendBuffer.get(dest);
+        L.add(m);
+        if(L.size() == BUFSIZE) {
+            link.send(L, Main.hostByID.get(dest));
+            L.clear();
+        }
+
+    }
+
+    private void clearBuffer(Integer dest){
+        List<Message> L = sendBuffer.get(dest);
+        for(Message m : L){
+            link.send(m, Main.hostByID.get(dest));
+        }
+        L.clear();
+    }
+
     private void ack(Message m){
-        link.send(new Message("ack " + m.content() , me.getId(), m.originalSender(),  m.id()), Main.hostByID.get(m.sender()));
+        link.send(new Message("ack " + m.content() , Main.me, m.originalSender(),  m.id()), Main.hostByID.get(m.sender()));
     }
 
     private synchronized void removeAcked(Message m){
-
-        // TODO optimize
-
         // find corresponding message
-        // Message m2 = null;
-        toSend.get(m.sender()).removeIf( m2 -> m.id() == m2.id() && ackContent(m).equals(m.content()) );
-        /*
-        for(Message temp : toSend){
-            if(
-                // m.sender().getId() == temp.destination().getId() && // TODO changing this will break everything
-                m.sender().getId() == temp.destination().getId() &&
-                m.id() == temp.id() && // id is correct
-                ackContent(m).equals(temp.content())
-            )
-            {
-                m2 = temp;
-            }
-        }
-        // remove it from messages to send
-        if(m2 != null) toSend.remove(m2);
-        */
-    }
-    
-    private String ackContent(Message m){
-        return m.content().substring(4);
+        acked.add( new Pair<Integer, Pair<Integer, Integer>>(m.sender(), new Pair<Integer, Integer>(m.originalSender(), m.id())));
+
     }
 
     private boolean isAck(Message m){

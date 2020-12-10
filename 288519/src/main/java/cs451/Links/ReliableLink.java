@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ReliableLink extends Link implements Observer {
 
     public int MAXSEND = (int) 3000 / Main.hosts.size(); // compute based on number of hosts
-    public static int BUFSIZE = 8;
+    public static int BUFSIZE = 16;
 
     private HashSet<Message> delivered;
     private Map<Integer, PriorityQueue<Message>> toSend;

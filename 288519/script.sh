@@ -37,7 +37,7 @@ do
     ./run.sh --id $i --hosts hosts --barrier localhost:11000 --signal localhost:11001 --output logs/outp$i config &
 done
 
-sleep 100
+sleep 40
 killall java
 sleep 1
 
